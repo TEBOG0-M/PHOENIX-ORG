@@ -1,4 +1,4 @@
-# Mamelodi Initiative — student project
+# PHOENIX ORG — student project
 
 ## Website
 The website is in `website/`. It uses plain HTML, CSS and JavaScript so it can be opened locally without a frontend build step. Open `website/index.html` in a browser or use Visual Studio Code with a local preview extension.
