@@ -1,6 +1,5 @@
 package com.mamelodiinitiative.data
 
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.mamelodiinitiative.data.models.Programme
 import com.mamelodiinitiative.viewmodel.MainUiState
