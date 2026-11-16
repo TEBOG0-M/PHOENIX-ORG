@@ -18,8 +18,8 @@ class VolunteerRepository(
             else -> ""
         }
         val status = when ((data["status"] as? String)?.lowercase()) {
-            "approved" -> "accepted"
-            "rejected" -> "declined"
+            "accepted" -> "approved"
+            "declined" -> "rejected"
             else -> (data["status"] as? String) ?: "pending"
         }
 
