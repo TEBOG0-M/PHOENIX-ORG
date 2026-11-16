@@ -1,11 +1,13 @@
 package com.mamelodiinitiative.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Article
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.MoreHoriz
@@ -27,3 +29,17 @@ val bottomNavItems = listOf(
     BottomNavItem(Routes.NEWS, "News", Icons.Default.Article, Icons.Outlined.Article),
     BottomNavItem(Routes.MORE, "More", Icons.Default.MoreHoriz, Icons.Outlined.MoreHoriz)
 )
+
+fun getNavItemsForRole(role: String?): List<BottomNavItem> {
+    val items = mutableListOf(
+        BottomNavItem(Routes.HOME, "Home", Icons.Default.Home, Icons.Outlined.Home),
+        BottomNavItem(Routes.PROGRAMMES, "Learn", Icons.Default.School, Icons.Outlined.School),
+        BottomNavItem(Routes.VOLUNTEER, "Join", Icons.Default.People, Icons.Outlined.People),
+        BottomNavItem(Routes.NEWS, "News", Icons.Default.Article, Icons.Outlined.Article)
+    )
+    if (role in listOf("manager", "admin")) {
+        items.add(BottomNavItem(Routes.MANAGER_DASHBOARD, "Manage", Icons.Default.AdminPanelSettings, Icons.Outlined.AdminPanelSettings))
+    }
+    items.add(BottomNavItem(Routes.MORE, "More", Icons.Default.MoreHoriz, Icons.Outlined.MoreHoriz))
+    return items
+}

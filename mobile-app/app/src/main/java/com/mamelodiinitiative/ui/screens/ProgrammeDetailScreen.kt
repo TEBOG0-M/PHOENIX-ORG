@@ -71,7 +71,7 @@ fun ProgrammeDetailScreen(programmeId: Int, onBack: () -> Unit, onNavigate: (Str
                 Text("About this programme", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
                 Text(
                     text = if (programme.description.contains("will be added", ignoreCase = true)) {
-                        "Current programme information has not yet been published in the app. Contact Mamelodi Initiative for confirmed details about activities, dates, eligibility and participation."
+                        "Current programme information has not yet been published in the app. Contact PHOENIX ORG for confirmed details about activities, dates, eligibility and participation."
                     } else programme.description,
                     style = MaterialTheme.typography.bodyLarge,
                     color = TextSecondary,
@@ -88,7 +88,7 @@ fun ProgrammeDetailScreen(programmeId: Int, onBack: () -> Unit, onNavigate: (Str
                 Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Text("Interested in taking part?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold)
                     Text(
-                        "Contact the initiative to confirm availability and the next steps for this programme.",
+                        "Contact PHOENIX ORG to confirm availability and the next steps for this programme.",
                         style = MaterialTheme.typography.bodyMedium, color = TextSecondary
                     )
                     Button(
@@ -99,7 +99,7 @@ fun ProgrammeDetailScreen(programmeId: Int, onBack: () -> Unit, onNavigate: (Str
                         modifier = Modifier.fillMaxWidth().height(56.dp).bounceClick(),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text("Contact the initiative", fontWeight = FontWeight.Bold)
+                        Text("Contact PHOENIX ORG", fontWeight = FontWeight.Bold)
                     }
                     OutlinedButton(
                         onClick = { onNavigate(Routes.VOLUNTEER) }, 

@@ -132,7 +132,7 @@ private fun AuthScreen(
             Spacer(Modifier.height(24.dp))
 
             Text(
-                text = "Mamelodi Initiative",
+                text = "PHOENIX ORG",
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Black,
                     letterSpacing = (-1.5).sp,

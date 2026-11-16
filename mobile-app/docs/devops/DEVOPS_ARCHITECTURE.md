@@ -1,4 +1,4 @@
-# Mamelodi Initiative — DevOps architecture
+# PHOENIX ORG — DevOps architecture
 
 ## Delivery flow
 Developer workstation → feature branch and meaningful commits → Azure Repos → pull request/review → Azure Pipelines → Gradle build and unit tests → build result and debug APK artifact → physical-device validation.

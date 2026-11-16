@@ -52,7 +52,7 @@ fun ProgrammesScreen(onNavigate: (String) -> Unit) {
                     fontWeight = FontWeight.Black
                 )
                 Text(
-                    "Explore our initiatives",
+                    "Explore PHOENIX ORG programmes",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.ExtraBold
                 )

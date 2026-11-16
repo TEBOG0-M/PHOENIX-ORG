@@ -1,6 +1,8 @@
 package com.mamelodiinitiative.ui.screens
 
 import androidx.compose.animation.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mamelodiinitiative.viewmodel.ContactViewModel
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
@@ -43,7 +46,9 @@ import kotlinx.coroutines.delay
 @Composable
 fun MoreScreen(
     onNavigate: (String) -> Unit,
-    onLogout: () -> Unit) {
+    onLogout: () -> Unit,
+    userRole: String? = null
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -66,13 +71,13 @@ fun MoreScreen(
         )
 
         Text(
-            text = "Find out about the initiative and explore ways to contribute.",
+            text = "Find out about PHOENIX ORG and explore ways to contribute.",
             style = MaterialTheme.typography.bodyLarge,
             color = TextSecondary
         )
 
         MoreMenuItem(
-            title = "About the initiative",
+            title = "About PHOENIX ORG",
             description = "Learn about the purpose and values behind the work.",
             icon = Icons.Filled.Info,
             onClick = { onNavigate(Routes.ABOUT) }
@@ -98,6 +103,15 @@ fun MoreScreen(
             icon = Icons.Filled.People,
             onClick = { onNavigate(Routes.VOLUNTEER) }
         )
+
+        if (userRole in listOf("manager", "admin")) {
+            MoreMenuItem(
+                title = "Manager Portal",
+                description = "Review applications and manage programmes.",
+                icon = Icons.Filled.AdminPanelSettings,
+                onClick = { onNavigate(Routes.MANAGER_DASHBOARD) }
+            )
+        }
         
         Spacer(Modifier.height(8.dp))
 
@@ -181,7 +195,7 @@ fun AboutScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
     InformationPage(
         eyebrow = "ABOUT US",
         title = "Creating opportunities through community",
-        intro = "Mamelodi Initiative is a community-focused initiative supporting youth participation, learning and development.",
+        intro = "PHOENIX ORG is a community-focused organisation supporting youth participation, learning and development.",
         sections = listOf(
             "Our purpose" to
                     "To help connect young people with opportunities to learn, participate, build confidence and explore their potential.",
@@ -208,7 +222,7 @@ fun DonateScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
     val haptic = LocalHapticFeedback.current
 
     val purposes = listOf(
-        "General Initiative Support",
+        "General Organisation Support",
         "Youth Education Programmes",
         "Infrastructure and Resources",
         "Holiday Programmes"
@@ -468,25 +482,177 @@ fun DonateScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
 }
 
 @Composable
-fun ContactScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
-    InformationPage(
-        eyebrow = "CONTACT",
-        title = "Find your way to get involved",
-        intro = "Use the options below to explore the initiative. Official details should be confirmed through an authorised source.",
-        sections = listOf(
-            "Programme enquiries" to
-                    "Explore the programme descriptions in the app. Confirm activities through an official source.",
-            "Volunteering" to
-                    "Open the join section to review the application form. Applications are stored for the team.",
-            "Donations and support" to
-                    "Review the support page for contribution ideas. Verify instructions before sending money."
-        ),
-        primaryLabel = "View programmes",
-        onPrimary = { onNavigate(Routes.PROGRAMMES) },
-        secondaryLabel = "Volunteer",
-        onSecondary = { onNavigate(Routes.VOLUNTEER) },
-        onBack = onBack
-    )
+fun ContactScreen(
+    onBack: () -> Unit,
+    onNavigate: (String) -> Unit,
+    contactViewModel: ContactViewModel = viewModel()
+) {
+    val contactState by contactViewModel.uiState.collectAsState()
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var subject by remember { mutableStateOf("") }
+    var message by remember { mutableStateOf("") }
+    val haptic = LocalHapticFeedback.current
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp)
+    ) {
+        MamelodiBackButton(onClick = onBack)
+
+        Text(
+            text = "CONTACT",
+            color = GreenPrimary,
+            style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 1.sp),
+            fontWeight = FontWeight.Black
+        )
+
+        Text(
+            text = "Find your way to get involved",
+            style = MaterialTheme.typography.headlineMedium.copy(lineHeight = 32.sp),
+            fontWeight = FontWeight.ExtraBold
+        )
+
+        Text(
+            text = "Use the options below to explore PHOENIX ORG or send us a message directly.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = TextSecondary
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text(
+                    text = "Send a message",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = GreenPrimary
+                )
+
+                if (contactState.isSuccess) {
+                    Surface(
+                        color = GreenLight,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(Icons.Default.Check, contentDescription = null, tint = GreenPrimary)
+                            Text(
+                                "Your message has been sent successfully. Thank you!",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = GreenPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    TextButton(
+                        onClick = { contactViewModel.resetState() },
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text("Send another message")
+                    }
+                } else {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Your name *") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email address *") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = subject,
+                        onValueChange = { subject = it },
+                        label = { Text("Subject (optional)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = message,
+                        onValueChange = { message = it },
+                        label = { Text("Message *") },
+                        minLines = 3,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    if (contactState.error != null) {
+                        Text(
+                            text = contactState.error!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            contactViewModel.submitMessage(name, email, subject, message)
+                        },
+                        enabled = !contactState.isLoading && name.isNotBlank() && email.isNotBlank() && message.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth().height(50.dp).bounceClick(),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        if (contactState.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Submit Message", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Button(
+            onClick = { onNavigate(Routes.PROGRAMMES) },
+            modifier = Modifier.fillMaxWidth().height(56.dp).bounceClick(),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Text("View programmes", fontWeight = FontWeight.Bold)
+        }
+
+        OutlinedButton(
+            onClick = { onNavigate(Routes.VOLUNTEER) },
+            modifier = Modifier.fillMaxWidth().height(56.dp).bounceClick(),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Text("Volunteer", fontWeight = FontWeight.Bold)
+        }
+    }
 }
 
 @Composable

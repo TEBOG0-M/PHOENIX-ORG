@@ -38,7 +38,12 @@ import com.mamelodiinitiative.ui.utils.bounceClick
 import com.mamelodiinitiative.viewmodel.VolunteerUiState
 
 @Composable
-fun VolunteerScreen(onNavigate: (String) -> Unit) {
+fun VolunteerScreen(
+    onNavigate: (String) -> Unit,
+    uiState: VolunteerUiState = VolunteerUiState()
+) {
+    val existingApp = uiState.existingApplication
+
     Column(
         Modifier
             .fillMaxSize()
@@ -63,35 +68,81 @@ fun VolunteerScreen(onNavigate: (String) -> Unit) {
             style = MaterialTheme.typography.bodyLarge,
             color = TextSecondary
         )
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = GreenLight),
-            modifier = Modifier.bounceClick()
-        ) {
-            Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text(
-                    "Make your contribution count",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "Tell us how to contact you and the ways you would like to help.",
-                    color = TextSecondary
-                )
-                Button(
-                    onClick = { onNavigate(Routes.VOLUNTEER_FORM) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text("Apply to volunteer", fontWeight = FontWeight.Bold)
+
+        if (existingApp != null) {
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier.fillMaxWidth().bounceClick(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Application Status",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        StatusBadge(status = existingApp.status)
+                    }
+
+                    Text(
+                        text = when (existingApp.status) {
+                            "approved" -> "Congratulations! Your application has been approved. Welcome to the PHOENIX ORG volunteer team."
+                            "rejected" -> "Thank you for your application. Unfortunately, it was not approved at this time."
+                            else -> "Your volunteer application is currently under review by our team. We will contact you once reviewed."
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Applicant: ${existingApp.fullName}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                        Text("Email: ${existingApp.email}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                        if (existingApp.availability.isNotBlank()) {
+                            Text("Availability: ${existingApp.availability}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                        }
+                    }
+                }
+            }
+        } else {
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = GreenLight),
+                modifier = Modifier.bounceClick()
+            ) {
+                Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Text(
+                        "Make your contribution count",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Tell us how to contact you and the ways you would like to help.",
+                        color = TextSecondary
+                    )
+                    Button(
+                        onClick = { onNavigate(Routes.VOLUNTEER_FORM) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text("Apply to volunteer", fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
+
         Text("Ways you can help", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
         Benefit(Icons.Filled.Groups, "Support young people", "Help create welcoming spaces where young people can learn, connect and grow.")
         Benefit(Icons.Filled.Lightbulb, "Share your skills", "Contribute your experience, interests or practical skills to community activities.")
         Benefit(Icons.Filled.Favorite, "Strengthen the community", "Work alongside others who want to make a constructive difference.")
-        
+
         Spacer(Modifier.height(8.dp))
     }
 }
@@ -118,7 +169,7 @@ fun VolunteerApplicationScreen(application: VolunteerApplication, onChange: (Vol
     val validEmail = Patterns.EMAIL_ADDRESS.matcher(application.email.trim()).matches()
     val validPhone = application.phone.filter { it.isDigit() }.length >= 7
     val canReview = application.fullName.isNotBlank() && validEmail && validPhone && application.availability.isNotBlank()
-    
+
     Column(
         Modifier
             .fillMaxSize()
@@ -128,11 +179,10 @@ fun VolunteerApplicationScreen(application: VolunteerApplication, onChange: (Vol
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         MamelodiBackButton(onClick = onBack, text = "Back to volunteering")
-        
+
         Text("Volunteer application", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
         Text("Complete your details so we can get in touch.", color = TextSecondary)
 
-        // Sectioned Groups for better UX
         FormSection(title = "Personal Information") {
             FriendlyTextField(
                 value = application.fullName,
@@ -179,9 +229,9 @@ fun VolunteerApplicationScreen(application: VolunteerApplication, onChange: (Vol
                 isValid = application.availability.isNotBlank()
             )
         }
-        
+
         Text("Required: full name, valid email, phone number and availability.", color = TextSecondary, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
-        
+
         Button(
             onClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -193,7 +243,7 @@ fun VolunteerApplicationScreen(application: VolunteerApplication, onChange: (Vol
         ) {
             Text("Review application", fontWeight = FontWeight.Bold, fontSize = 16.sp)
         }
-        
+
         Spacer(Modifier.height(12.dp))
     }
 }
@@ -260,7 +310,7 @@ fun VolunteerReviewScreen(
 ) {
     val application = state.application
     val haptic = LocalHapticFeedback.current
-    
+
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) onSuccess()
     }
@@ -275,7 +325,7 @@ fun VolunteerReviewScreen(
     ) {
         Text("Review application", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
         Text("Check your details before submitting.", color = TextSecondary)
-        
+
         Card(
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -304,7 +354,7 @@ fun VolunteerReviewScreen(
         }
 
         Text("By continuing, you confirm these details are accurate.", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-        
+
         Button(
             onClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -320,16 +370,16 @@ fun VolunteerReviewScreen(
                 Text("Submit application", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
-        
+
         OutlinedButton(
             onClick = onEdit,
             modifier = Modifier.fillMaxWidth().height(58.dp).bounceClick(),
             enabled = !state.isLoading,
             shape = RoundedCornerShape(18.dp)
-        ) { 
-            Text("Edit details", fontWeight = FontWeight.Bold) 
+        ) {
+            Text("Edit details", fontWeight = FontWeight.Bold)
         }
-        
+
         Spacer(Modifier.height(12.dp))
     }
 }
@@ -366,7 +416,7 @@ fun VolunteerSuccessScreen(onNavigate: (String) -> Unit) {
                 color = TextSecondary,
                 textAlign = TextAlign.Center
             )
-            
+
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
                     onClick = { onNavigate(Routes.HOME) },

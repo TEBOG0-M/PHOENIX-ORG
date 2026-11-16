@@ -11,5 +11,6 @@ data class VolunteerApplication(
     val skills: String = "",
     val programmePreference: String = "",
     val availability: String = "",
+    val status: String = "pending",
     val submittedAt: Timestamp? = null
 )

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.mamelodiinitiative.data.models.UserProfile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -12,6 +13,7 @@ import kotlinx.coroutines.launch
 data class AuthUiState(
     val isLoading: Boolean = false,
     val user: FirebaseUser? = FirebaseAuth.getInstance().currentUser,
+    val profile: UserProfile? = null,
     val message: String? = null
 )
 
@@ -19,13 +21,27 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState = _uiState.asStateFlow()
 
+    init {
+        loadUserProfile()
+    }
+
     fun register(email: String, password: String) = authenticate(email, password, true)
     fun signIn(email: String, password: String) = authenticate(email, password, false)
     fun clearMessage() { _uiState.value = _uiState.value.copy(message = null) }
 
     fun signOut() {
         repository.signOut()
-        _uiState.value = AuthUiState(user = null)
+        _uiState.value = AuthUiState(user = null, profile = null)
+    }
+
+    private fun loadUserProfile() {
+        val user = repository.currentUser
+        if (user != null) {
+            viewModelScope.launch {
+                val profileResult = repository.getUserProfile(user.uid)
+                _uiState.value = _uiState.value.copy(profile = profileResult.getOrNull())
+            }
+        }
     }
 
     private fun authenticate(email: String, password: String, register: Boolean) {
@@ -42,9 +58,14 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
             _uiState.value = _uiState.value.copy(isLoading = true, message = null)
             val result = if (register) repository.register(cleanEmail, password)
                          else repository.signIn(cleanEmail, password)
-            _uiState.value = result.fold(
-                onSuccess = { AuthUiState(user = it) },
-                onFailure = { AuthUiState(user = repository.currentUser, message = it.friendlyMessage()) }
+            result.fold(
+                onSuccess = { user ->
+                    val profileResult = repository.getUserProfile(user.uid)
+                    _uiState.value = AuthUiState(user = user, profile = profileResult.getOrNull())
+                },
+                onFailure = {
+                    _uiState.value = AuthUiState(user = repository.currentUser, message = it.friendlyMessage())
+                }
             )
         }
     }

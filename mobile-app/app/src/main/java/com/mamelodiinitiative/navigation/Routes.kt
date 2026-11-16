@@ -14,6 +14,13 @@ object Routes {
     const val ABOUT = "about"
     const val DONATE = "donate"
     const val CONTACT = "contact"
+
+    // Manager Routes
+    const val MANAGER_DASHBOARD = "manager_dashboard"
+    const val MANAGER_APPLICATIONS = "manager_applications"
+    const val MANAGER_PROGRAMME_EDIT = "manager_programme_edit/{docId}"
+
     fun programmeDetail(id: Int) = "programme_detail/$id"
     fun newsDetail(id: Int) = "news_detail/$id"
+    fun managerProgrammeEdit(docId: String) = "manager_programme_edit/$docId"
 }

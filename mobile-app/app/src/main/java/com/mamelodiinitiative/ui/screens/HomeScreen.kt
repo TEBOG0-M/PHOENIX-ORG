@@ -3,7 +3,6 @@ package com.mamelodiinitiative.ui.screens
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
@@ -29,16 +28,21 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mamelodiinitiative.data.sampledata.sampleNews
-import com.mamelodiinitiative.data.sampledata.sampleProgrammes
+import com.mamelodiinitiative.data.models.NewsItem
+import com.mamelodiinitiative.data.models.Programme
 import com.mamelodiinitiative.navigation.Routes
 import com.mamelodiinitiative.ui.theme.GreenDark
 import com.mamelodiinitiative.ui.theme.GreenLight
 import com.mamelodiinitiative.ui.theme.GreenPrimary
 import com.mamelodiinitiative.ui.theme.TextSecondary
+import com.mamelodiinitiative.viewmodel.MainUiState
 
 @Composable
-fun HomeScreen(onNavigate: (String) -> Unit) {
+fun HomeScreen(
+    programmesState: MainUiState<Programme>,
+    newsState: MainUiState<NewsItem>,
+    onNavigate: (String) -> Unit
+) {
     val haptic = LocalHapticFeedback.current
     var visible by remember { mutableStateOf(false) }
     
@@ -60,7 +64,7 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "MAMELODI INITIATIVE",
+                    text = "PHOENIX ORG",
                     style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 1.sp),
                     color = GreenPrimary,
                     fontWeight = FontWeight.Black
@@ -72,7 +76,7 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
-                    text = "Discover our programmes, follow our latest updates, or get involved in the community.",
+                    text = "Discover our programmes, follow our latest updates, or get involved with PHOENIX ORG.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = TextSecondary
                 )
@@ -161,66 +165,70 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            SectionHeading(title = "Our programmes", subtitle = "Explore ways to learn and grow")
-            sampleProgrammes.take(3).forEachIndexed { index, programme ->
-                AnimatedVisibility(
-                    visible = visible,
-                    enter = fadeIn(tween(600, 400 + (index * 100))) + slideInHorizontally(tween(600, 400 + (index * 100))) { 40 }
-                ) {
-                    FriendlyCard(
-                        onClick = { onNavigate(Routes.programmeDetail(programme.id)) },
-                        modifier = Modifier.fillMaxWidth()
+        if (programmesState.data.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                SectionHeading(title = "Our programmes", subtitle = "Explore ways to learn and grow")
+                programmesState.data.take(3).forEachIndexed { index, programme ->
+                    AnimatedVisibility(
+                        visible = visible,
+                        enter = fadeIn(tween(600, 400 + (index * 100))) + slideInHorizontally(tween(600, 400 + (index * 100))) { 40 }
                     ) {
-                        Row(
-                            modifier = Modifier.padding(18.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        FriendlyCard(
+                            onClick = { onNavigate(Routes.programmeDetail(programme.id)) },
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = GreenLight
+                            Row(
+                                modifier = Modifier.padding(18.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    Icons.Filled.School,
-                                    contentDescription = null,
-                                    tint = GreenPrimary,
-                                    modifier = Modifier.padding(12.dp)
-                                )
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = GreenLight
+                                ) {
+                                    Icon(
+                                        Icons.Filled.School,
+                                        contentDescription = null,
+                                        tint = GreenPrimary,
+                                        modifier = Modifier.padding(12.dp)
+                                    )
+                                }
+                                Spacer(Modifier.width(14.dp))
+                                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(programme.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Text(programme.description, style = MaterialTheme.typography.bodySmall, color = TextSecondary, maxLines = 2)
+                                }
+                                Icon(Icons.Filled.ArrowForward, contentDescription = "View ${programme.title}", tint = GreenPrimary, modifier = Modifier.padding(start = 8.dp))
                             }
-                            Spacer(Modifier.width(14.dp))
-                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(programme.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                Text(programme.description, style = MaterialTheme.typography.bodySmall, color = TextSecondary, maxLines = 2)
-                            }
-                            Icon(Icons.Filled.ArrowForward, contentDescription = "View ${programme.title}", tint = GreenPrimary, modifier = Modifier.padding(start = 8.dp))
                         }
                     }
                 }
-            }
-            OutlinedButton(
-                onClick = { onNavigate(Routes.PROGRAMMES) },
-                modifier = Modifier.fillMaxWidth().bounceClick(),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text("View all programmes", fontWeight = FontWeight.SemiBold)
+                OutlinedButton(
+                    onClick = { onNavigate(Routes.PROGRAMMES) },
+                    modifier = Modifier.fillMaxWidth().bounceClick(),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("View all programmes", fontWeight = FontWeight.SemiBold)
+                }
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            SectionHeading(title = "Latest update", subtitle = "News from the initiative")
-            val latest = sampleNews.firstOrNull()
-            if (latest != null) {
-                FriendlyCard(
-                    onClick = { onNavigate(Routes.newsDetail(latest.id)) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(latest.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(latest.description, style = MaterialTheme.typography.bodyMedium, color = TextSecondary, maxLines = 3)
-                        Text("Read update  →", style = MaterialTheme.typography.labelLarge, color = GreenPrimary, fontWeight = FontWeight.Bold)
+        if (newsState.data.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                SectionHeading(title = "Latest update", subtitle = "News from PHOENIX ORG")
+                val latest = newsState.data.firstOrNull()
+                if (latest != null) {
+                    FriendlyCard(
+                        onClick = { onNavigate(Routes.newsDetail(latest.id)) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(latest.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(latest.description, style = MaterialTheme.typography.bodyMedium, color = TextSecondary, maxLines = 3)
+                            Text("Read update  →", style = MaterialTheme.typography.labelLarge, color = GreenPrimary, fontWeight = FontWeight.Bold)
+                        }
                     }
+                    Spacer(Modifier.height(2.dp))
                 }
-                Spacer(Modifier.height(2.dp))
             }
         }
 
@@ -234,7 +242,6 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
     }
 }
 
-@Composable
 fun Modifier.bounceClick() = composed {
     var isPressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(if (isPressed) 0.96f else 1f, label = "bounce")

@@ -13,11 +13,15 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.mamelodiinitiative.auth.AuthViewModel
 import com.mamelodiinitiative.ui.components.BottomNavBar
 import com.mamelodiinitiative.ui.screens.AboutScreen
 import com.mamelodiinitiative.ui.screens.ContactScreen
 import com.mamelodiinitiative.ui.screens.DonateScreen
 import com.mamelodiinitiative.ui.screens.HomeScreen
+import com.mamelodiinitiative.ui.screens.ManagerApplicationsScreen
+import com.mamelodiinitiative.ui.screens.ManagerDashboardScreen
+import com.mamelodiinitiative.ui.screens.ManagerProgrammeEditScreen
 import com.mamelodiinitiative.ui.screens.MoreScreen
 import com.mamelodiinitiative.ui.screens.NewsDetailScreen
 import com.mamelodiinitiative.ui.screens.NewsScreen
@@ -27,19 +31,31 @@ import com.mamelodiinitiative.ui.screens.VolunteerApplicationScreen
 import com.mamelodiinitiative.ui.screens.VolunteerReviewScreen
 import com.mamelodiinitiative.ui.screens.VolunteerScreen
 import com.mamelodiinitiative.ui.screens.VolunteerSuccessScreen
+import com.mamelodiinitiative.viewmodel.ContactViewModel
+import com.mamelodiinitiative.viewmodel.MainViewModel
+import com.mamelodiinitiative.viewmodel.ManagerViewModel
 import com.mamelodiinitiative.viewmodel.VolunteerViewModel
 
 @Composable
 fun AppNavigation(
     onLogout: () -> Unit,
     navController: NavHostController = rememberNavController(),
-    volunteerViewModel: VolunteerViewModel = viewModel()
+    authViewModel: AuthViewModel = viewModel(),
+    volunteerViewModel: VolunteerViewModel = viewModel(),
+    mainViewModel: MainViewModel = viewModel(),
+    contactViewModel: ContactViewModel = viewModel(),
+    managerViewModel: ManagerViewModel = viewModel()
 ) {
+    val authUiState by authViewModel.uiState.collectAsState()
     val volunteerUiState by volunteerViewModel.uiState.collectAsState()
+    val programmesState by mainViewModel.programmesState.collectAsState()
+    val newsState by mainViewModel.newsState.collectAsState()
+
+    val navItems = getNavItemsForRole(authUiState.profile?.role)
 
     Scaffold(
         bottomBar = {
-            BottomNavBar(navController, bottomNavItems)
+            BottomNavBar(navController, navItems)
         }
     ) { padding ->
         NavHost(
@@ -48,7 +64,11 @@ fun AppNavigation(
             modifier = Modifier.padding(padding)
         ) {
             composable(Routes.HOME) {
-                HomeScreen(onNavigate = navController::navigate)
+                HomeScreen(
+                    programmesState = programmesState,
+                    newsState = newsState,
+                    onNavigate = navController::navigate
+                )
             }
 
             composable(Routes.PROGRAMMES) {
@@ -71,7 +91,10 @@ fun AppNavigation(
             }
 
             composable(Routes.VOLUNTEER) {
-                VolunteerScreen(onNavigate = navController::navigate)
+                VolunteerScreen(
+                    onNavigate = navController::navigate,
+                    uiState = volunteerUiState
+                )
             }
 
             composable(Routes.VOLUNTEER_FORM) {
@@ -115,7 +138,7 @@ fun AppNavigation(
             }
 
             composable(
-                route = NEWS_DETAIL,
+                route = Routes.NEWS_DETAIL,
                 arguments = listOf(
                     navArgument("newsId") {
                         type = NavType.IntType
@@ -132,7 +155,8 @@ fun AppNavigation(
             composable(Routes.MORE) {
                 MoreScreen(
                     onNavigate = navController::navigate,
-                    onLogout = onLogout
+                    onLogout = onLogout,
+                    userRole = authUiState.profile?.role
                 )
             }
 
@@ -153,10 +177,40 @@ fun AppNavigation(
             composable(Routes.CONTACT) {
                 ContactScreen(
                     onBack = { navController.popBackStack() },
-                    onNavigate = navController::navigate
+                    onNavigate = navController::navigate,
+                    contactViewModel = contactViewModel
+                )
+            }
+
+            // Manager Routes
+            composable(Routes.MANAGER_DASHBOARD) {
+                ManagerDashboardScreen(
+                    onNavigate = navController::navigate,
+                    managerViewModel = managerViewModel
+                )
+            }
+
+            composable(Routes.MANAGER_APPLICATIONS) {
+                ManagerApplicationsScreen(
+                    onBack = { navController.popBackStack() },
+                    managerViewModel = managerViewModel
+                )
+            }
+
+            composable(
+                route = Routes.MANAGER_PROGRAMME_EDIT,
+                arguments = listOf(
+                    navArgument("docId") {
+                        type = NavType.StringType
+                    }
+                )
+            ) { entry ->
+                ManagerProgrammeEditScreen(
+                    docId = entry.arguments?.getString("docId") ?: "new",
+                    onBack = { navController.popBackStack() },
+                    managerViewModel = managerViewModel
                 )
             }
         }
     }
 }
-private const val NEWS_DETAIL = Routes.NEWS_DETAIL
