@@ -36,7 +36,7 @@ service cloud.firestore {
 
       allow create: if isOwner(userId)
                     && request.resource.data.uid == request.auth.uid
-                    && request.resource.data.role == 'volunteer'
+                    && request.resource.data.role in ['member', 'volunteer', 'donor']
                     && request.resource.data.fullName is string
                     && request.resource.data.fullName.size() > 0;
 
@@ -49,10 +49,10 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // 2. Volunteer applications collection
-    match /volunteer_applications/{applicationId} {
+    // 2. Applications collection (volunteer applications)
+    match /applications/{applicationId} {
       allow create: if isAuthenticated()
-                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.uid == request.auth.uid
                     && request.resource.data.status == 'pending'
                     && request.resource.data.fullName is string
                     && request.resource.data.fullName.size() > 0
@@ -60,7 +60,7 @@ service cloud.firestore {
                     && request.resource.data.email.size() > 0;
 
       allow read: if isAuthenticated()
-                  && (resource.data.userId == request.auth.uid || isManager());
+                  && (resource.data.uid == request.auth.uid || isManager());
 
       allow update: if isManager()
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
@@ -69,8 +69,8 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // 3. Programmes collection
-    match /programmes/{programmeId} {
+    // 3. Missions collection (programmes)
+    match /missions/{missionId} {
       allow read: if true;
       allow write: if isManager();
     }
@@ -81,8 +81,8 @@ service cloud.firestore {
       allow write: if isManager();
     }
 
-    // 5. Contact messages collection
-    match /contact_messages/{messageId} {
+    // 5. Mail collection (contact messages)
+    match /mail/{messageId} {
       allow create: if request.resource.data.name is string
                     && request.resource.data.name.size() > 0
                     && request.resource.data.name.size() <= 100
@@ -94,6 +94,26 @@ service cloud.firestore {
                     && request.resource.data.message.size() <= 2000;
 
       allow read, update, delete: if isManager();
+    }
+
+    // 6. Donations collection
+    match /donations/{donationId} {
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || isManager());
+      allow write: if isManager();
+    }
+
+    // 7. Pledges collection
+    match /pledges/{pledgeId} {
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || isManager());
+      allow write: if isManager();
+    }
+
+    // 8. Notifications collection
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow write: if isManager();
     }
   }
 }

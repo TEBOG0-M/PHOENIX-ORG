@@ -12,7 +12,7 @@ class ProgrammeRepository(
 ) {
     suspend fun getProgrammes(): MainUiState<Programme> {
         return try {
-            val snapshot = firestore.collection("programmes").get().await()
+            val snapshot = firestore.collection("missions").get().await()
             if (!snapshot.isEmpty) {
                 val programmes = snapshot.documents.mapIndexed { index, doc ->
                     val p = doc.toObject(Programme::class.java) ?: Programme()
@@ -32,9 +32,9 @@ class ProgrammeRepository(
 
     suspend fun saveProgramme(programme: Programme): Result<Unit> = runCatching {
         val docRef = if (programme.docId.isNotBlank()) {
-            firestore.collection("programmes").document(programme.docId)
+            firestore.collection("missions").document(programme.docId)
         } else {
-            firestore.collection("programmes").document()
+            firestore.collection("missions").document()
         }
         val pToSave = programme.copy(
             docId = docRef.id,
@@ -44,6 +44,6 @@ class ProgrammeRepository(
     }
 
     suspend fun deleteProgramme(docId: String): Result<Unit> = runCatching {
-        firestore.collection("programmes").document(docId).delete().await()
+        firestore.collection("missions").document(docId).delete().await()
     }
 }

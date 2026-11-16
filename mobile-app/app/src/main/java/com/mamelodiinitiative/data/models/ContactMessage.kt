@@ -4,7 +4,7 @@ import com.google.firebase.Timestamp
 
 data class ContactMessage(
     val id: String = "",
-    val userId: String? = null,
+    val uid: String? = null,
     val name: String = "",
     val email: String = "",
     val subject: String = "",

@@ -11,10 +11,10 @@ class ContactRepository(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) {
     suspend fun submitMessage(message: ContactMessage): Result<Unit> = runCatching {
-        val docRef = firestore.collection("contact_messages").document()
+        val docRef = firestore.collection("mail").document()
         val finalMsg = message.copy(
             id = docRef.id,
-            userId = auth.currentUser?.uid,
+            uid = auth.currentUser?.uid,
             createdAt = Timestamp.now()
         )
         docRef.set(finalMsg).await()

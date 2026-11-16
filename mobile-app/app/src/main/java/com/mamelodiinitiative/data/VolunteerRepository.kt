@@ -13,10 +13,10 @@ class VolunteerRepository(
     suspend fun submitApplication(application: VolunteerApplication): Result<Unit> = runCatching {
         val user = auth.currentUser ?: throw IllegalStateException("User must be authenticated to submit")
 
-        val docRef = firestore.collection("volunteer_applications").document()
+        val docRef = firestore.collection("applications").document()
         val finalApp = application.copy(
             id = docRef.id,
-            userId = user.uid,
+            uid = user.uid,
             status = "pending",
             submittedAt = Timestamp.now()
         )
@@ -24,17 +24,17 @@ class VolunteerRepository(
         docRef.set(finalApp).await()
     }
 
-    suspend fun getUserApplications(userId: String): Result<List<VolunteerApplication>> = runCatching {
-        val snapshot = firestore.collection("volunteer_applications")
-            .whereEqualTo("userId", userId)
+    suspend fun getUserApplications(uid: String): Result<List<VolunteerApplication>> = runCatching {
+        val snapshot = firestore.collection("applications")
+            .whereEqualTo("uid", uid)
             .get()
             .await()
         snapshot.toObjects(VolunteerApplication::class.java)
     }
 
-    suspend fun getLatestUserApplication(userId: String): Result<VolunteerApplication?> = runCatching {
-        val snapshot = firestore.collection("volunteer_applications")
-            .whereEqualTo("userId", userId)
+    suspend fun getLatestUserApplication(uid: String): Result<VolunteerApplication?> = runCatching {
+        val snapshot = firestore.collection("applications")
+            .whereEqualTo("uid", uid)
             .get()
             .await()
         val apps = snapshot.toObjects(VolunteerApplication::class.java)
@@ -42,14 +42,14 @@ class VolunteerRepository(
     }
 
     suspend fun getAllApplications(): Result<List<VolunteerApplication>> = runCatching {
-        val snapshot = firestore.collection("volunteer_applications")
+        val snapshot = firestore.collection("applications")
             .get()
             .await()
         snapshot.toObjects(VolunteerApplication::class.java).sortedByDescending { it.submittedAt?.seconds ?: 0 }
     }
 
     suspend fun updateApplicationStatus(applicationId: String, status: String): Result<Unit> = runCatching {
-        firestore.collection("volunteer_applications")
+        firestore.collection("applications")
             .document(applicationId)
             .update("status", status)
             .await()

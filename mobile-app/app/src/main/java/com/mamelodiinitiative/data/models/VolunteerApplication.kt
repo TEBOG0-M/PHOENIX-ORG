@@ -4,7 +4,7 @@ import com.google.firebase.Timestamp
 
 data class VolunteerApplication(
     val id: String = "",
-    val userId: String = "",
+    val uid: String = "",
     val fullName: String = "",
     val email: String = "",
     val phone: String = "",
