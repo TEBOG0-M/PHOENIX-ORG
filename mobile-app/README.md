@@ -1,50 +1,164 @@
-<<<<<<< HEAD
-# Mamelodi Initiative — Android Application
+PHOENIX ORG — Android Application
 
-A community-focused mobile application for the Mamelodi Initiative, designed to facilitate youth engagement, volunteer coordination, and organizational transparency. Built using modern Android development practices with Kotlin, Jetpack Compose, and Firebase.
+The PHOENIX ORG Android application provides a mobile platform for community members to explore programmes, access organisational information, follow news and submit volunteer applications.
 
-## Project Overview
+The application is developed with Kotlin and Jetpack Compose, following modern Android development practices.
 
-This application serves as a central hub for community members to:
-- Explore youth development and educational programmes.
-- Stay updated with the latest news and initiative stories.
-- Apply for volunteer opportunities with secure data persistence.
-- Discover ways to support the initiative through donations and direct contact.
+Features
 
-## Key Features
+Authentication
 
-- **Authentication**: Secure user sessions powered by Firebase Authentication (Email/Password).
-- **Interactive UI**: A modern, "friendly" design language utilizing Material 3, custom bounce interactions, and staggered animations.
-- **Volunteer Management**: A complete multi-step application journey with on-device validation and Firestore cloud persistence.
-- **Dynamic Navigation**: Optimized bottom navigation (Learn, Join, News, More) with haptic feedback and state preservation.
-- **Information Hub**: Detailed views for programmes and news, alongside a structured support enquiry flow.
+- User registration and sign-in using Firebase Authentication.
+- Authentication state management through an application-level authentication gate.
+- Sign-out functionality.
 
-## Technical Stack
+Home and Organisation
 
-- **Language**: Kotlin
-- **UI Framework**: Jetpack Compose (Material 3)
-- **Backend**: Firebase (Authentication & Firestore)
-- **Navigation**: Jetpack Compose Navigation
-- **Architecture**: MVVM (Model-View-ViewModel) with Repository pattern
+- Home screen with organisational information.
+- About section describing the organisation.
+- Programme listings and individual programme details.
 
-## Getting Started
+Volunteer Applications
 
-1.  Open the `mobile-app` folder in Android Studio.
-2.  Ensure a valid `app/google-services.json` file is present in the `app` module.
-3.  Sync Gradle and run the project on an Android emulator or physical device.
+- Volunteer information and application entry point.
+- Multi-step application process.
+- Application review before submission.
+- Submission success screen.
+- Form state managed through a shared ViewModel.
 
-For build artifacts, run:
-```bash
+News
+
+- News listing.
+- Individual news article details.
+
+Additional Information
+
+- Donation information.
+- Contact information.
+- Additional organisational navigation.
+
+«Note: The application provides donation information; it does not currently represent a payment-processing integration.»
+
+Technology Stack
+
+Technology| Purpose
+Kotlin| Application programming language
+Jetpack Compose| Declarative UI
+Material 3| UI components and theming
+Android Navigation Compose| Screen navigation
+Firebase Authentication| User authentication
+Cloud Firestore| Existing cloud data integration
+Retrofit| HTTP API communication
+Gson| JSON serialization
+OkHttp| HTTP client and logging
+DataStore Preferences| Local preference storage
+Kotlin Coroutines| Asynchronous operations
+AndroidX Lifecycle| Lifecycle-aware state management
+
+Project Structure
+
+mobile-app/
+├── app/
+│   ├── src/
+│   │   └── main/
+│   │       ├── java/
+│   │       │   └── com/mamelodiinitiative/
+│   │       │       ├── auth/
+│   │       │       ├── navigation/
+│   │       │       ├── ui/
+│   │       │       │   ├── components/
+│   │       │       │   ├── screens/
+│   │       │       │   └── theme/
+│   │       │       ├── viewmodel/
+│   │       │       └── MainActivity.kt
+│   │       └── AndroidManifest.xml
+│   └── build.gradle.kts
+├── build.gradle.kts
+└── README.md
+
+The package and namespace currently remain "com.mamelodiinitiative". The PHOENIX ORG rebrand does not require changing these technical identifiers.
+
+Requirements
+
+- Android Studio.
+- JDK 17.
+- Android SDK 35.
+- Android device or emulator running Android 7.0 (API 24) or later.
+- Access to the project's configured Firebase project.
+
+Getting Started
+
+1. Clone the repository:
+   
+   git clone https://github.com/TEBOG0-M/PHOENIX-ORG.git
+
+2. Open the "mobile-app" directory in Android Studio.
+
+3. Configure the Firebase Android application and place the corresponding "google-services.json" file inside:
+   
+   mobile-app/app/google-services.json
+
+4. Sync the project with Gradle.
+
+5. Select an Android emulator or connected device.
+
+6. Build and run the application from Android Studio.
+
+The configured Android build targets SDK 35, uses a minimum SDK of 24 and targets Java 17.
+
+Backend Integration
+
+The repository also contains a PHP REST API and MySQL database schema under "api/".
+
+The API provides endpoints for:
+
+- Health checks.
+- News retrieval.
+- Contact submissions.
+- Authenticated user profiles.
+- Volunteer application submission, retrieval and withdrawal.
+
+Authenticated API requests use Firebase ID tokens, which the PHP backend verifies before processing protected operations.
+
+Database integration status: The Android application has existing Firebase/Firestore integration, while the PHP API persists its records in MySQL. These are separate data stores in the current implementation. A unified MySQL-backed data flow is an integration requirement, not something this README claims is already complete.
+
+The intended architecture should use the same backend and database for the website and mobile application, with Firebase Authentication providing user identity where applicable.
+
+Build and Testing
+
+The Android project is configured for:
+
+- Debug APK builds.
+- Local JVM unit tests.
+- Android instrumentation tests.
+
+When the Gradle wrapper is available in the project, the following commands can be used from "mobile-app":
+
+./gradlew assembleDebug
+./gradlew testDebugUnitTest
+
+On Windows:
+
 .\gradlew.bat assembleDebug
-```
+.\gradlew.bat testDebugUnitTest
 
-## Development State
+Build and test results should be verified against the current project before being treated as passing.
 
-Current implementation includes full front-end journeys and Firebase integration. Volunteer applications are successfully persisted to Firestore. Future milestones include expanding the backend REST API integration for dynamic programme and news management.
-=======
-# mobile-app
+Security
 
-This folder is a placeholder for the mobile app for the Mamelodi Initiative project.
+- Do not commit private credentials or signing keys.
+- Keep Firebase configuration specific to the intended application.
+- Do not embed database credentials in the Android application.
+- Use HTTPS for production API communication.
+- Send Firebase ID tokens through authenticated API requests.
+- Validate user input on both the client and server.
 
-Add your mobile app code here (e.g., Android, iOS, React Native, Flutter).
->>>>>>> origin/main
+Development Notes
+
+The Android application is part of the wider PHOENIX ORG project. Its development should remain aligned with the shared backend, database and organisational requirements.
+
+Existing package names, Firebase identifiers and backend contracts should only be changed when a confirmed technical requirement calls for it.
+
+Project Repository
+
+"PHOENIX ORG — GitHub Repository" (https://github.com/TEBOG0-M/PHOENIX-ORG)
