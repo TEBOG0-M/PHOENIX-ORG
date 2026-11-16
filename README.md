@@ -101,7 +101,6 @@ PHOENIX-ORG/
 │   ├── azure-pipelines.yml
 │   └── README.md
 ├── phoenox-website/             # Separate website project
-├── tools/                       # Repository utility scripts
 ├── Project Plan.docx
 ├── LICENSE
 └── README.md
