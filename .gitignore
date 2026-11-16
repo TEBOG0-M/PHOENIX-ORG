@@ -6,6 +6,7 @@
 **/google-services.json
 
 # Dependencies and generated output
+**/.artifacts/
 node_modules/
 vendor/
 .gradle/
