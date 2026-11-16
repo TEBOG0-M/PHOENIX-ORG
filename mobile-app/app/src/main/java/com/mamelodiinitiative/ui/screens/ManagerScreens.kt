@@ -100,11 +100,12 @@ fun ManagerDashboardScreen(
 ) {
     val appsState by managerViewModel.applicationsState.collectAsState()
     val programmesState by managerViewModel.programmesState.collectAsState()
+    val volunteersState by managerViewModel.volunteersState.collectAsState()
     val actionStatus by managerViewModel.actionStatus.collectAsState()
     val haptic = LocalHapticFeedback.current
 
     val pendingCount = appsState.data.count { it.status == "pending" }
-    val approvedCount = appsState.data.count { it.status == "approved" }
+    val registeredVolunteerCount = volunteersState.data.size
     val programmesCount = programmesState.data.size
 
     LaunchedEffect(Unit) {
@@ -203,12 +204,12 @@ fun ManagerDashboardScreen(
                 onClick = { onNavigate(Routes.MANAGER_APPLICATIONS) }
             )
             MetricCard(
-                title = "Approved Volunteers",
-                count = approvedCount.toString(),
+                title = "Registered Volunteers",
+                count = registeredVolunteerCount.toString(),
                 icon = Icons.Default.CheckCircle,
                 color = GreenPrimary,
                 modifier = Modifier.weight(1f),
-                onClick = { onNavigate(Routes.MANAGER_APPLICATIONS) }
+                onClick = { onNavigate(Routes.MANAGER_VOLUNTEERS) }
             )
         }
 
