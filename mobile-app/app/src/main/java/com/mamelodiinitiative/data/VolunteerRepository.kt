@@ -1,7 +1,7 @@
 package com.mamelodiinitiative.data
 
-import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.mamelodiinitiative.data.models.VolunteerApplication
 import kotlinx.coroutines.tasks.await
@@ -10,48 +10,97 @@ class VolunteerRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) {
+    private fun mapApplication(document: com.google.firebase.firestore.DocumentSnapshot): VolunteerApplication {
+        val data = document.data.orEmpty()
+        val skills = when (val value = data["skills"]) {
+            is List<*> -> value.filterIsInstance<String>().joinToString(", ")
+            is String -> value
+            else -> ""
+        }
+        val status = when ((data["status"] as? String)?.lowercase()) {
+            "approved" -> "accepted"
+            "rejected" -> "declined"
+            else -> (data["status"] as? String) ?: "pending"
+        }
+
+        return VolunteerApplication(
+            id = document.id,
+            uid = data["uid"] as? String ?: "",
+            fullName = data["name"] as? String ?: data["fullName"] as? String ?: "",
+            email = data["email"] as? String ?: "",
+            phone = data["phone"] as? String ?: "",
+            skills = skills,
+            missionId = data["missionId"] as? String ?: "",
+            missionTitle = data["missionTitle"] as? String ?: "",
+            date = data["date"] as? String ?: "",
+            note = data["note"] as? String ?: "",
+            status = status,
+            createdAt = data["createdAt"] as? String
+                ?: (data["createdAt"] as? com.google.firebase.Timestamp)?.toDate()?.toInstant()?.toString().orEmpty(),
+            decidedAt = data["decidedAt"] as? String
+        )
+    }
+
     suspend fun submitApplication(application: VolunteerApplication): Result<Unit> = runCatching {
         val user = auth.currentUser ?: throw IllegalStateException("User must be authenticated to submit")
-
         val docRef = firestore.collection("applications").document()
-        val finalApp = application.copy(
-            id = docRef.id,
-            uid = user.uid,
-            status = "pending",
-            submittedAt = Timestamp.now()
-        )
+        val profile = firestore.collection("users").document(user.uid).get().await().data.orEmpty()
+        val skills = when (val value = profile["skills"]) {
+            is List<*> -> value.filterIsInstance<String>()
+            is String -> value.split(",").map(String::trim).filter(String::isNotEmpty)
+            else -> emptyList()
+        }
+        val name = (profile["name"] as? String)
+            ?: (profile["fullName"] as? String)
+            ?: user.displayName.orEmpty()
 
-        docRef.set(finalApp).await()
+        val record = mapOf(
+            "uid" to user.uid,
+            "name" to name,
+            "email" to (profile["email"] as? String ?: user.email.orEmpty()),
+            "phone" to (profile["phone"] as? String ?: ""),
+            "skills" to skills,
+            "missionId" to application.missionId,
+            "missionTitle" to application.missionTitle,
+            "date" to application.date,
+            "note" to application.note,
+            "status" to "pending",
+            "createdAt" to java.time.Instant.now().toString(),
+            "decidedAt" to null
+        )
+        docRef.set(record).await()
     }
 
     suspend fun getUserApplications(uid: String): Result<List<VolunteerApplication>> = runCatching {
-        val snapshot = firestore.collection("applications")
+        firestore.collection("applications")
             .whereEqualTo("uid", uid)
-            .get()
-            .await()
-        snapshot.toObjects(VolunteerApplication::class.java)
+            .get().await().documents
+            .map(::mapApplication)
+            .sortedByDescending { it.createdAt }
     }
 
     suspend fun getLatestUserApplication(uid: String): Result<VolunteerApplication?> = runCatching {
-        val snapshot = firestore.collection("applications")
+        firestore.collection("applications")
             .whereEqualTo("uid", uid)
-            .get()
-            .await()
-        val apps = snapshot.toObjects(VolunteerApplication::class.java)
-        apps.maxByOrNull { it.submittedAt?.seconds ?: 0 }
+            .get().await().documents
+            .map(::mapApplication)
+            .maxByOrNull { it.createdAt }
     }
 
     suspend fun getAllApplications(): Result<List<VolunteerApplication>> = runCatching {
-        val snapshot = firestore.collection("applications")
-            .get()
-            .await()
-        snapshot.toObjects(VolunteerApplication::class.java).sortedByDescending { it.submittedAt?.seconds ?: 0 }
+        firestore.collection("applications").get().await().documents
+            .map(::mapApplication)
+            .sortedByDescending { it.createdAt }
     }
 
     suspend fun updateApplicationStatus(applicationId: String, status: String): Result<Unit> = runCatching {
-        firestore.collection("applications")
-            .document(applicationId)
-            .update("status", status)
+        val websiteStatus = when (status.lowercase()) {
+            "approved", "accepted" -> "accepted"
+            "rejected", "declined" -> "declined"
+            else -> throw IllegalArgumentException("Unsupported application status: $status")
+        }
+        firestore.collection("applications").document(applicationId)
+            .update(mapOf("status" to websiteStatus, "decidedAt" to java.time.Instant.now().toString()))
             .await()
     }
 }
