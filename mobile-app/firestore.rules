@@ -45,8 +45,8 @@ service cloud.firestore {
       allow create: if isOwner(userId)
         && request.resource.data.uid == request.auth.uid
         && validPublicRole(request.resource.data.role)
-        && request.resource.data.fullName is string
-        && request.resource.data.fullName.size() > 0;
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0;
 
       allow update: if (
           isOwner(userId)
