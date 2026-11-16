@@ -72,19 +72,23 @@ fun AppNavigation(
             }
 
             composable(Routes.PROGRAMMES) {
-                ProgrammesScreen(onNavigate = navController::navigate)
+                ProgrammesScreen(
+                    state = programmesState,
+                    onNavigate = navController::navigate
+                )
             }
 
             composable(
                 route = Routes.PROGRAMME_DETAIL,
                 arguments = listOf(
                     navArgument("programmeId") {
-                        type = NavType.IntType
+                        type = NavType.StringType
                     }
                 )
             ) { entry ->
                 ProgrammeDetailScreen(
-                    programmeId = entry.arguments?.getInt("programmeId") ?: -1,
+                    programmeId = entry.arguments?.getString("programmeId") ?: "",
+                    programmes = programmesState.data,
                     onBack = { navController.popBackStack() },
                     onNavigate = navController::navigate
                 )
@@ -134,19 +138,23 @@ fun AppNavigation(
             }
 
             composable(Routes.NEWS) {
-                NewsScreen(onNavigate = navController::navigate)
+                NewsScreen(
+                    state = newsState,
+                    onNavigate = navController::navigate
+                )
             }
 
             composable(
                 route = Routes.NEWS_DETAIL,
                 arguments = listOf(
                     navArgument("newsId") {
-                        type = NavType.IntType
+                        type = NavType.StringType
                     }
                 )
             ) { entry ->
                 NewsDetailScreen(
-                    newsId = entry.arguments?.getInt("newsId") ?: -1,
+                    newsId = entry.arguments?.getString("newsId") ?: "",
+                    newsList = newsState.data,
                     onBack = { navController.popBackStack() },
                     onNavigate = navController::navigate
                 )

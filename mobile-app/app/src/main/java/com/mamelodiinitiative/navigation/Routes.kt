@@ -20,7 +20,9 @@ object Routes {
     const val MANAGER_APPLICATIONS = "manager_applications"
     const val MANAGER_PROGRAMME_EDIT = "manager_programme_edit/{docId}"
 
+    fun programmeDetail(programmeId: String) = "programme_detail/$programmeId"
     fun programmeDetail(id: Int) = "programme_detail/$id"
+    fun newsDetail(newsId: String) = "news_detail/$newsId"
     fun newsDetail(id: Int) = "news_detail/$id"
     fun managerProgrammeEdit(docId: String) = "manager_programme_edit/$docId"
 }

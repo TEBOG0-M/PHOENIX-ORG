@@ -22,29 +22,40 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
     val uiState = _uiState.asStateFlow()
 
     init {
-        loadUserProfile()
+        checkAndLoadProfile()
     }
 
-    fun register(email: String, password: String) = authenticate(email, password, true)
-    fun signIn(email: String, password: String) = authenticate(email, password, false)
-    fun clearMessage() { _uiState.value = _uiState.value.copy(message = null) }
-
-    fun signOut() {
-        repository.signOut()
-        _uiState.value = AuthUiState(user = null, profile = null)
-    }
-
-    private fun loadUserProfile() {
-        val user = repository.currentUser
-        if (user != null) {
-            viewModelScope.launch {
-                val profileResult = repository.getUserProfile(user.uid)
-                _uiState.value = _uiState.value.copy(profile = profileResult.getOrNull())
-            }
+    fun register(email: String, password: String, fullName: String) {
+        val cleanEmail = email.trim()
+        val cleanName = fullName.trim()
+        if (cleanName.isBlank()) {
+            _uiState.value = _uiState.value.copy(message = "Enter your full name.")
+            return
+        }
+        if (!Patterns.EMAIL_ADDRESS.matcher(cleanEmail).matches()) {
+            _uiState.value = _uiState.value.copy(message = "Enter a valid email address.")
+            return
+        }
+        if (password.length < 6) {
+            _uiState.value = _uiState.value.copy(message = "Password must be at least 6 characters.")
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, message = null)
+            val result = repository.register(cleanEmail, password, cleanName)
+            result.fold(
+                onSuccess = { user ->
+                    val profile = repository.ensureUserProfile(user)
+                    _uiState.value = AuthUiState(user = user, profile = profile)
+                },
+                onFailure = {
+                    _uiState.value = AuthUiState(user = repository.currentUser, message = it.friendlyMessage())
+                }
+            )
         }
     }
 
-    private fun authenticate(email: String, password: String, register: Boolean) {
+    fun signIn(email: String, password: String) {
         val cleanEmail = email.trim()
         if (!Patterns.EMAIL_ADDRESS.matcher(cleanEmail).matches()) {
             _uiState.value = _uiState.value.copy(message = "Enter a valid email address.")
@@ -56,17 +67,33 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
         }
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, message = null)
-            val result = if (register) repository.register(cleanEmail, password)
-                         else repository.signIn(cleanEmail, password)
+            val result = repository.signIn(cleanEmail, password)
             result.fold(
                 onSuccess = { user ->
-                    val profileResult = repository.getUserProfile(user.uid)
-                    _uiState.value = AuthUiState(user = user, profile = profileResult.getOrNull())
+                    val profile = repository.ensureUserProfile(user)
+                    _uiState.value = AuthUiState(user = user, profile = profile)
                 },
                 onFailure = {
                     _uiState.value = AuthUiState(user = repository.currentUser, message = it.friendlyMessage())
                 }
             )
+        }
+    }
+
+    fun clearMessage() { _uiState.value = _uiState.value.copy(message = null) }
+
+    fun signOut() {
+        repository.signOut()
+        _uiState.value = AuthUiState(user = null, profile = null)
+    }
+
+    private fun checkAndLoadProfile() {
+        val user = repository.currentUser
+        if (user != null) {
+            viewModelScope.launch {
+                val profile = repository.ensureUserProfile(user)
+                _uiState.value = _uiState.value.copy(profile = profile)
+            }
         }
     }
 }

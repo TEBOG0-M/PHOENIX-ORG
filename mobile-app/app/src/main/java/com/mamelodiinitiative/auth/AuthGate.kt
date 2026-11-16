@@ -1,8 +1,6 @@
 package com.mamelodiinitiative.auth
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -21,10 +19,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -70,10 +66,11 @@ private fun AuthScreen(
     isLoading: Boolean,
     message: String?,
     onSignIn: (String, String) -> Unit,
-    onRegister: (String, String) -> Unit,
+    onRegister: (String, String, String) -> Unit,
     clearMessage: () -> Unit
 ) {
     var registerMode by remember { mutableStateOf(false) }
+    var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -216,6 +213,30 @@ private fun AuthScreen(
 
                     Spacer(Modifier.height(8.dp))
 
+                    AnimatedVisibility(
+                        visible = registerMode,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        OutlinedTextField(
+                            value = fullName,
+                            onValueChange = { fullName = it; clearMessage() },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("Full Name") },
+                            leadingIcon = { Icon(Icons.Default.Person, null, tint = primaryColor.copy(alpha = 0.6f)) },
+                            singleLine = true,
+                            enabled = !isLoading,
+                            shape = RoundedCornerShape(16.dp),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Text,
+                                imeAction = ImeAction.Next
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                            )
+                        )
+                    }
+
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it; clearMessage() },
@@ -265,7 +286,7 @@ private fun AuthScreen(
                                 if (email.isNotBlank() && password.length >= 6) {
                                     focusManager.clearFocus()
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    if (registerMode) onRegister(email, password) else onSignIn(email, password)
+                                    if (registerMode) onRegister(email, password, fullName) else onSignIn(email, password)
                                 }
                             }
                         )
@@ -293,12 +314,12 @@ private fun AuthScreen(
                         onClick = {
                             focusManager.clearFocus()
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            if (registerMode) onRegister(email, password) else onSignIn(email, password)
+                            if (registerMode) onRegister(email, password, fullName) else onSignIn(email, password)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(62.dp),
-                        enabled = !isLoading && email.isNotBlank() && password.length >= 6,
+                        enabled = !isLoading && email.isNotBlank() && password.length >= 6 && (!registerMode || fullName.isNotBlank()),
                         shape = RoundedCornerShape(20.dp),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 4.dp)
                     ) {

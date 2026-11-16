@@ -1,6 +1,7 @@
 package com.mamelodiinitiative.ui.screens
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,7 +18,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mamelodiinitiative.data.sampledata.sampleProgrammes
+import com.mamelodiinitiative.data.models.Programme
 import com.mamelodiinitiative.navigation.Routes
 import com.mamelodiinitiative.ui.components.MamelodiBackButton
 import com.mamelodiinitiative.ui.theme.GreenLight
@@ -26,8 +27,13 @@ import com.mamelodiinitiative.ui.theme.TextSecondary
 import com.mamelodiinitiative.ui.utils.bounceClick
 
 @Composable
-fun ProgrammeDetailScreen(programmeId: Int, onBack: () -> Unit, onNavigate: (String) -> Unit) {
-    val programme = sampleProgrammes.firstOrNull { it.id == programmeId }
+fun ProgrammeDetailScreen(
+    programmeId: String,
+    programmes: List<Programme>,
+    onBack: () -> Unit,
+    onNavigate: (String) -> Unit
+) {
+    val programme = programmes.firstOrNull { it.docId == programmeId || it.id.toString() == programmeId }
     val haptic = LocalHapticFeedback.current
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }

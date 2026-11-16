@@ -19,16 +19,20 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mamelodiinitiative.data.sampledata.sampleNews
+import com.mamelodiinitiative.data.models.NewsItem
 import com.mamelodiinitiative.navigation.Routes
 import com.mamelodiinitiative.ui.components.MamelodiBackButton
 import com.mamelodiinitiative.ui.theme.GreenLight
 import com.mamelodiinitiative.ui.theme.GreenPrimary
 import com.mamelodiinitiative.ui.theme.TextSecondary
 import com.mamelodiinitiative.ui.utils.bounceClick
+import com.mamelodiinitiative.viewmodel.MainUiState
 
 @Composable
-fun NewsScreen(onNavigate: (String) -> Unit) {
+fun NewsScreen(
+    state: MainUiState<NewsItem> = MainUiState(),
+    onNavigate: (String) -> Unit
+) {
     val haptic = LocalHapticFeedback.current
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
@@ -65,49 +69,88 @@ fun NewsScreen(onNavigate: (String) -> Unit) {
             }
         }
 
-        sampleNews.forEachIndexed { index, news ->
-            AnimatedVisibility(
-                visible = visible,
-                enter = fadeIn(tween(500, 100 * index)) + slideInVertically(tween(500, 100 * index)) { 40 }
+        if (state.isFallback) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Card(
-                    onClick = { 
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        onNavigate(Routes.newsDetail(news.id)) 
-                    },
-                    modifier = Modifier.fillMaxWidth().bounceClick(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                Text(
+                    text = "Demo Content — Cloud sync offline. Showing demonstration news articles.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(14.dp),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        if (state.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxWidth().height(200.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = GreenPrimary)
+            }
+        } else if (state.data.isEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Text(
+                    text = "No news articles available at this time.",
+                    modifier = Modifier.padding(24.dp),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = TextSecondary
+                )
+            }
+        } else {
+            state.data.forEachIndexed { index, news ->
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = fadeIn(tween(500, 100 * index)) + slideInVertically(tween(500, 100 * index)) { 40 }
                 ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    Card(
+                        onClick = { 
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            val identifier = news.docId.ifBlank { news.id.toString() }
+                            onNavigate(Routes.newsDetail(identifier)) 
+                        },
+                        modifier = Modifier.fillMaxWidth().bounceClick(),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
-                        Surface(
-                            color = GreenLight,
-                            shape = RoundedCornerShape(10.dp)
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            Surface(
+                                color = GreenLight,
+                                shape = RoundedCornerShape(10.dp)
                             ) {
-                                Icon(Icons.Filled.Article, null, tint = GreenPrimary, modifier = Modifier.size(14.dp))
-                                Text(news.date, color = GreenPrimary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(Icons.Filled.Article, null, tint = GreenPrimary, modifier = Modifier.size(14.dp))
+                                    Text(news.date.ifBlank { "Update" }, color = GreenPrimary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                }
                             }
-                        }
 
-                        Text(news.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Text(news.description, style = MaterialTheme.typography.bodyMedium, color = TextSecondary, maxLines = 3)
+                            Text(news.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text(news.description, style = MaterialTheme.typography.bodyMedium, color = TextSecondary, maxLines = 3)
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Read story", color = GreenPrimary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Black)
-                            Icon(Icons.Filled.ArrowForward, null, tint = GreenPrimary, modifier = Modifier.padding(start = 6.dp).size(18.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Read story", color = GreenPrimary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Black)
+                                Icon(Icons.Filled.ArrowForward, null, tint = GreenPrimary, modifier = Modifier.padding(start = 6.dp).size(18.dp))
+                            }
                         }
                     }
                 }
@@ -118,8 +161,13 @@ fun NewsScreen(onNavigate: (String) -> Unit) {
 }
 
 @Composable
-fun NewsDetailScreen(newsId: Int, onBack: () -> Unit, onNavigate: (String) -> Unit) {
-    val news = sampleNews.firstOrNull { it.id == newsId }
+fun NewsDetailScreen(
+    newsId: String,
+    newsList: List<NewsItem>,
+    onBack: () -> Unit,
+    onNavigate: (String) -> Unit
+) {
+    val news = newsList.firstOrNull { it.docId == newsId || it.id.toString() == newsId }
     val haptic = LocalHapticFeedback.current
 
     Column(
@@ -137,7 +185,7 @@ fun NewsDetailScreen(newsId: Int, onBack: () -> Unit, onNavigate: (String) -> Un
             Button(onClick = onBack, shape = RoundedCornerShape(16.dp)) { Text("View news") }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(news.date.uppercase(), color = GreenPrimary, style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 1.sp), fontWeight = FontWeight.Black)
+                Text(news.date.uppercase().ifBlank { "UPDATE" }, color = GreenPrimary, style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 1.sp), fontWeight = FontWeight.Black)
                 Text(news.title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
             }
 

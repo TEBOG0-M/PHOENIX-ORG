@@ -19,15 +19,19 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mamelodiinitiative.data.sampledata.sampleProgrammes
+import com.mamelodiinitiative.data.models.Programme
 import com.mamelodiinitiative.navigation.Routes
 import com.mamelodiinitiative.ui.theme.GreenLight
 import com.mamelodiinitiative.ui.theme.GreenPrimary
 import com.mamelodiinitiative.ui.theme.TextSecondary
 import com.mamelodiinitiative.ui.utils.bounceClick
+import com.mamelodiinitiative.viewmodel.MainUiState
 
 @Composable
-fun ProgrammesScreen(onNavigate: (String) -> Unit) {
+fun ProgrammesScreen(
+    state: MainUiState<Programme> = MainUiState(),
+    onNavigate: (String) -> Unit
+) {
     val haptic = LocalHapticFeedback.current
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
@@ -64,59 +68,98 @@ fun ProgrammesScreen(onNavigate: (String) -> Unit) {
             }
         }
 
-        sampleProgrammes.forEachIndexed { index, programme ->
-            AnimatedVisibility(
-                visible = visible,
-                enter = fadeIn(tween(500, 100 * index)) + slideInHorizontally(tween(500, 100 * index)) { 40 }
+        if (state.isFallback) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Card(
-                    onClick = { 
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        onNavigate(Routes.programmeDetail(programme.id)) 
-                    },
-                    modifier = Modifier.fillMaxWidth().bounceClick(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                Text(
+                    text = "Demo Content — Cloud sync offline. Showing demonstration programmes.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(14.dp),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        if (state.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxWidth().height(200.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = GreenPrimary)
+            }
+        } else if (state.data.isEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Text(
+                    text = "No programmes available at this time.",
+                    modifier = Modifier.padding(24.dp),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = TextSecondary
+                )
+            }
+        } else {
+            state.data.forEachIndexed { index, programme ->
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = fadeIn(tween(500, 100 * index)) + slideInHorizontally(tween(500, 100 * index)) { 40 }
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    Card(
+                        onClick = { 
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            val identifier = programme.docId.ifBlank { programme.id.toString() }
+                            onNavigate(Routes.programmeDetail(identifier)) 
+                        },
+                        modifier = Modifier.fillMaxWidth().bounceClick(),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
-                        Surface(shape = RoundedCornerShape(12.dp), color = GreenLight) {
-                            Icon(
-                                imageVector = Icons.Filled.School,
-                                contentDescription = null,
-                                tint = GreenPrimary,
-                                modifier = Modifier
-                                    .padding(12.dp)
-                                    .size(24.dp)
-                            )
-                        }
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Text(
-                                programme.title,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                "View details and schedule",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = TextSecondary
+                            Surface(shape = RoundedCornerShape(12.dp), color = GreenLight) {
+                                Icon(
+                                    imageVector = Icons.Filled.School,
+                                    contentDescription = null,
+                                    tint = GreenPrimary,
+                                    modifier = Modifier
+                                        .padding(12.dp)
+                                        .size(24.dp)
+                                )
+                            }
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    programme.title,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "View details and schedule",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextSecondary
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Filled.ArrowForward,
+                                contentDescription = "View ${programme.title}",
+                                tint = GreenPrimary,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
-                        Icon(
-                            imageVector = Icons.Filled.ArrowForward,
-                            contentDescription = "View ${programme.title}",
-                            tint = GreenPrimary,
-                            modifier = Modifier.size(20.dp)
-                        )
                     }
                 }
             }
