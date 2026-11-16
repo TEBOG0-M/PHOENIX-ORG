@@ -1,10 +1,35 @@
+# Environment and credentials
+.env
+.env.*
+!.env.example
+**/local.properties
+**/google-services.json
+
+# Dependencies and generated output
 node_modules/
 vendor/
-.env
+.gradle/
+**/.gradle/
+**/build/
+**/out/
+**/dist/
 *.log
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# Android native build output
+.cxx/
+.externalNativeBuild/
+captures/
+
+# Generated app packages
+*.apk
+*.aab
+
+# Local tooling and operating-system files
 .DS_Store
-mobile-app/app/google-services.json
-mobile-app/local.properties
-mobile-app/.gradle/
-mobile-app/build/
-mobile-app/app/build/
+Thumbs.db
+*.swp
+*~
