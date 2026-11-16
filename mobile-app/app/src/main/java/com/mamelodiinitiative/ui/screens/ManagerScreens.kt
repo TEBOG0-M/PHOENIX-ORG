@@ -694,6 +694,7 @@ fun ManagerVolunteersScreen(
     managerViewModel: ManagerViewModel = viewModel()
 ) {
     val state by managerViewModel.volunteersState.collectAsState()
+    val applicationsState by managerViewModel.applicationsState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     val filtered = remember(state.data, searchQuery) {
         val query = searchQuery.trim().lowercase()
@@ -784,14 +785,18 @@ fun ManagerVolunteersScreen(
             }
 
             else -> filtered.forEach { volunteer ->
-                VolunteerDirectoryCard(volunteer)
+                val history = applicationsState.data.filter { it.uid == volunteer.uid }
+                VolunteerDirectoryCard(volunteer, history)
             }
         }
     }
 }
 
 @Composable
-private fun VolunteerDirectoryCard(volunteer: VolunteerProfile) {
+private fun VolunteerDirectoryCard(
+    volunteer: VolunteerProfile,
+    applicationHistory: List<VolunteerApplication>
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -819,6 +824,19 @@ private fun VolunteerDirectoryCard(volunteer: VolunteerProfile) {
             }
             if (volunteer.availability.isNotEmpty()) {
                 Text("Availability: ${volunteer.availability.joinToString(", ")}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Text("Application history (${applicationHistory.size})", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            if (applicationHistory.isEmpty()) {
+                Text("No applications recorded.", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            } else {
+                applicationHistory.sortedByDescending { it.createdAt }.forEach { application ->
+                    val applicationLabel = application.missionTitle.ifBlank { "General volunteer application" }
+                    Text("$applicationLabel · ${application.status.replaceFirstChar { it.uppercase() }}", style = MaterialTheme.typography.bodySmall)
+                    if (application.createdAt.isNotBlank()) {
+                        Text(application.createdAt, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                    }
+                }
             }
             Text("Profile ID: ${volunteer.uid}", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
         }
