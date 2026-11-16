@@ -12,108 +12,126 @@ service cloud.firestore {
     }
 
     function getUserData() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) ?
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data :
-             null;
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+        : null;
     }
 
     function getUserRole() {
       let data = getUserData();
-      return data != null && data.keys().hasAll(['role']) ? data.role : 'none';
+      return data != null && data.keys().hasAll(['role'])
+        ? data.role
+        : 'none';
     }
 
+    // The shared website contract uses "manager" for management access.
+    // "admin" remains a distinct privileged role and is not implicitly a manager.
     function isManager() {
-      return isAuthenticated() && getUserRole() in ['manager', 'admin'];
+      return isAuthenticated() && getUserRole() == 'manager';
     }
 
     function isAdmin() {
       return isAuthenticated() && getUserRole() == 'admin';
     }
 
-    // 1. Users collection
+    function validPublicRole(role) {
+      return role in ['member', 'volunteer', 'donor'];
+    }
+
     match /users/{userId} {
-      allow read: if isOwner(userId) || isManager();
+      allow read: if isOwner(userId) || isManager() || isAdmin();
 
       allow create: if isOwner(userId)
-                    && request.resource.data.uid == request.auth.uid
-                    && request.resource.data.role in ['member', 'volunteer', 'donor']
-                    && request.resource.data.fullName is string
-                    && request.resource.data.fullName.size() > 0;
+        && request.resource.data.uid == request.auth.uid
+        && validPublicRole(request.resource.data.role)
+        && request.resource.data.fullName is string
+        && request.resource.data.fullName.size() > 0;
 
-      allow update: if (isOwner(userId)
-                        && request.resource.data.uid == resource.data.uid
-                        && request.resource.data.createdAt == resource.data.createdAt
-                        && request.resource.data.role == resource.data.role)
-                    || isAdmin();
+      allow update: if (
+          isOwner(userId)
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.role == resource.data.role
+        ) || isAdmin();
 
       allow delete: if isAdmin();
     }
 
-    // 2. Applications collection (volunteer applications)
     match /applications/{applicationId} {
       allow create: if isAuthenticated()
-                    && request.resource.data.uid == request.auth.uid
-                    && request.resource.data.status == 'pending'
-                    && request.resource.data.fullName is string
-                    && request.resource.data.fullName.size() > 0
-                    && request.resource.data.email is string
-                    && request.resource.data.email.size() > 0;
+        && getUserRole() == 'volunteer'
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.fullName is string
+        && request.resource.data.fullName.size() > 0
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 0;
 
       allow read: if isAuthenticated()
-                  && (resource.data.uid == request.auth.uid || isManager());
+        && (resource.data.uid == request.auth.uid || isManager() || isAdmin());
 
-      allow update: if isManager()
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
-                    && request.resource.data.status in ['approved', 'rejected'];
+      allow update: if (isManager() || isAdmin())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status in ['approved', 'rejected'];
 
       allow delete: if isAdmin();
     }
 
-    // 3. Missions collection (programmes)
     match /missions/{missionId} {
       allow read: if true;
-      allow write: if isManager();
+      allow create, update, delete: if isManager() || isAdmin();
     }
 
-    // 4. News articles collection
     match /news_articles/{articleId} {
       allow read: if true;
-      allow write: if isManager();
+      allow create, update, delete: if isManager() || isAdmin();
     }
 
-    // 5. Mail collection (contact messages)
+    // Public contact submission is intentionally limited to validated fields.
+    // Coordinate this with the website developer before deploying shared rules.
     match /mail/{messageId} {
-      allow create: if request.resource.data.name is string
-                    && request.resource.data.name.size() > 0
-                    && request.resource.data.name.size() <= 100
-                    && request.resource.data.email is string
-                    && request.resource.data.email.size() > 0
-                    && request.resource.data.email.size() <= 100
-                    && request.resource.data.message is string
-                    && request.resource.data.message.size() > 0
-                    && request.resource.data.message.size() <= 2000;
+      allow create: if request.resource.data.keys().hasAll(['name', 'email', 'message'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 0
+        && request.resource.data.email.size() <= 100
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 2000;
 
-      allow read, update, delete: if isManager();
+      allow read, update, delete: if isManager() || isAdmin();
     }
 
-    // 6. Donations collection
     match /donations/{donationId} {
-      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
-      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || isManager());
-      allow write: if isManager();
+      allow create: if isAuthenticated()
+        && request.resource.data.uid == request.auth.uid;
+      allow read: if isAuthenticated()
+        && (resource.data.uid == request.auth.uid || isManager() || isAdmin());
+      allow update, delete: if isManager() || isAdmin();
     }
 
-    // 7. Pledges collection
     match /pledges/{pledgeId} {
-      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
-      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || isManager());
-      allow write: if isManager();
+      allow create: if isAuthenticated()
+        && request.resource.data.uid == request.auth.uid;
+      allow read: if isAuthenticated()
+        && (resource.data.uid == request.auth.uid || isManager() || isAdmin());
+      allow update, delete: if isManager() || isAdmin();
     }
 
-    // 8. Notifications collection
     match /notifications/{notificationId} {
-      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
-      allow write: if isManager();
+      allow read: if isAuthenticated()
+        && (
+          resource.data.uid == request.auth.uid
+          || resource.data.toUid == request.auth.uid
+        );
+      allow create, update, delete: if isManager() || isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
