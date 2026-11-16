@@ -10,6 +10,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -25,19 +26,20 @@ private val LightColorScheme = lightColorScheme(
     primary = GreenPrimary,
     secondary = GreenDark,
     tertiary = Pink40,
-    background = androidx.compose.ui.graphics.Color(0xFFFFFBFE),
-    surface = androidx.compose.ui.graphics.Color(0xFFFFFBFE),
-    onPrimary = androidx.compose.ui.graphics.Color.White,
-    onSecondary = androidx.compose.ui.graphics.Color.White,
-    onTertiary = androidx.compose.ui.graphics.Color.White,
-    onBackground = androidx.compose.ui.graphics.Color(0xFF1C1B1F),
-    onSurface = androidx.compose.ui.graphics.Color(0xFF1C1B1F),
+    background = BackgroundColor,
+    surface = SurfaceColor,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onTertiary = Color.White,
+    onBackground = Color(0xFF1A1C19),
+    onSurface = Color(0xFF1A1C19),
+    outline = OutlineColor,
+    outlineVariant = OutlineColor
 )
 
 @Composable
 fun MamelodiInitiativeTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -53,8 +55,8 @@ fun MamelodiInitiativeTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            window.statusBarColor = colorScheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
 
