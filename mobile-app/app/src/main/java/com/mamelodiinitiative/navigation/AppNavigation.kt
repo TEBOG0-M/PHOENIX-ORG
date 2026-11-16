@@ -18,6 +18,7 @@ import com.mamelodiinitiative.ui.components.BottomNavBar
 import com.mamelodiinitiative.ui.screens.AboutScreen
 import com.mamelodiinitiative.ui.screens.ContactScreen
 import com.mamelodiinitiative.ui.screens.DonateScreen
+import com.mamelodiinitiative.ui.screens.GuardedManagerScreen
 import com.mamelodiinitiative.ui.screens.HomeScreen
 import com.mamelodiinitiative.ui.screens.ManagerApplicationsScreen
 import com.mamelodiinitiative.ui.screens.ManagerDashboardScreen
@@ -192,17 +193,27 @@ fun AppNavigation(
 
             // Manager Routes
             composable(Routes.MANAGER_DASHBOARD) {
-                ManagerDashboardScreen(
-                    onNavigate = navController::navigate,
-                    managerViewModel = managerViewModel
-                )
+                GuardedManagerScreen(
+                    userRole = authUiState.profile?.role,
+                    onNavigateHome = { navController.navigate(Routes.HOME) { popUpTo(Routes.HOME) { inclusive = true } } }
+                ) {
+                    ManagerDashboardScreen(
+                        onNavigate = navController::navigate,
+                        managerViewModel = managerViewModel
+                    )
+                }
             }
 
             composable(Routes.MANAGER_APPLICATIONS) {
-                ManagerApplicationsScreen(
-                    onBack = { navController.popBackStack() },
-                    managerViewModel = managerViewModel
-                )
+                GuardedManagerScreen(
+                    userRole = authUiState.profile?.role,
+                    onNavigateHome = { navController.navigate(Routes.HOME) { popUpTo(Routes.HOME) { inclusive = true } } }
+                ) {
+                    ManagerApplicationsScreen(
+                        onBack = { navController.popBackStack() },
+                        managerViewModel = managerViewModel
+                    )
+                }
             }
 
             composable(
@@ -213,11 +224,16 @@ fun AppNavigation(
                     }
                 )
             ) { entry ->
-                ManagerProgrammeEditScreen(
-                    docId = entry.arguments?.getString("docId") ?: "new",
-                    onBack = { navController.popBackStack() },
-                    managerViewModel = managerViewModel
-                )
+                GuardedManagerScreen(
+                    userRole = authUiState.profile?.role,
+                    onNavigateHome = { navController.navigate(Routes.HOME) { popUpTo(Routes.HOME) { inclusive = true } } }
+                ) {
+                    ManagerProgrammeEditScreen(
+                        docId = entry.arguments?.getString("docId") ?: "new",
+                        onBack = { navController.popBackStack() },
+                        managerViewModel = managerViewModel
+                    )
+                }
             }
         }
     }

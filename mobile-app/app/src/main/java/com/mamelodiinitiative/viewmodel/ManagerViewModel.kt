@@ -79,16 +79,18 @@ class ManagerViewModel(
         }
     }
 
-    fun deleteProgramme(docId: String) {
+    fun deleteProgramme(docId: String, onComplete: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
             val result = programmeRepository.deleteProgramme(docId)
             result.fold(
                 onSuccess = {
                     _actionStatus.value = "Programme deleted."
                     loadManagerData()
+                    onComplete(true)
                 },
                 onFailure = { err ->
                     _actionStatus.value = "Failed to delete: ${err.localizedMessage}"
+                    onComplete(false)
                 }
             )
         }

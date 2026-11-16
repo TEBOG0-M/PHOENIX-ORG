@@ -63,7 +63,8 @@ service cloud.firestore {
                   && (resource.data.userId == request.auth.uid || isManager());
 
       allow update: if isManager()
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+                    && request.resource.data.status in ['approved', 'rejected'];
 
       allow delete: if isAdmin();
     }

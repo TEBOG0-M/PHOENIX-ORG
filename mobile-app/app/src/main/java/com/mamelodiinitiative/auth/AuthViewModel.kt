@@ -12,9 +12,11 @@ import kotlinx.coroutines.launch
 
 data class AuthUiState(
     val isLoading: Boolean = false,
+    val isProfileLoading: Boolean = false,
     val user: FirebaseUser? = FirebaseAuth.getInstance().currentUser,
     val profile: UserProfile? = null,
-    val message: String? = null
+    val message: String? = null,
+    val profileError: String? = null
 )
 
 class AuthViewModel(private val repository: AuthRepository = AuthRepository()) : ViewModel() {
@@ -22,6 +24,10 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
     val uiState = _uiState.asStateFlow()
 
     init {
+        checkAndLoadProfile()
+    }
+
+    fun retryProfileLoad() {
         checkAndLoadProfile()
     }
 
@@ -45,8 +51,12 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
             val result = repository.register(cleanEmail, password, cleanName)
             result.fold(
                 onSuccess = { user ->
-                    val profile = repository.ensureUserProfile(user)
-                    _uiState.value = AuthUiState(user = user, profile = profile)
+                    try {
+                        val profile = repository.ensureUserProfile(user)
+                        _uiState.value = AuthUiState(user = user, profile = profile, isLoading = false)
+                    } catch (e: Exception) {
+                        _uiState.value = AuthUiState(user = user, profile = null, isLoading = false, profileError = e.localizedMessage ?: "Failed to load profile.")
+                    }
                 },
                 onFailure = {
                     _uiState.value = AuthUiState(user = repository.currentUser, message = it.friendlyMessage())
@@ -70,8 +80,12 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
             val result = repository.signIn(cleanEmail, password)
             result.fold(
                 onSuccess = { user ->
-                    val profile = repository.ensureUserProfile(user)
-                    _uiState.value = AuthUiState(user = user, profile = profile)
+                    try {
+                        val profile = repository.ensureUserProfile(user)
+                        _uiState.value = AuthUiState(user = user, profile = profile, isLoading = false)
+                    } catch (e: Exception) {
+                        _uiState.value = AuthUiState(user = user, profile = null, isLoading = false, profileError = e.localizedMessage ?: "Failed to load profile.")
+                    }
                 },
                 onFailure = {
                     _uiState.value = AuthUiState(user = repository.currentUser, message = it.friendlyMessage())
@@ -91,8 +105,13 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
         val user = repository.currentUser
         if (user != null) {
             viewModelScope.launch {
-                val profile = repository.ensureUserProfile(user)
-                _uiState.value = _uiState.value.copy(profile = profile)
+                _uiState.value = _uiState.value.copy(isProfileLoading = true, profileError = null)
+                try {
+                    val profile = repository.ensureUserProfile(user)
+                    _uiState.value = _uiState.value.copy(profile = profile, isProfileLoading = false)
+                } catch (e: Exception) {
+                    _uiState.value = _uiState.value.copy(profile = null, isProfileLoading = false, profileError = e.localizedMessage ?: "Failed to load user profile.")
+                }
             }
         }
     }

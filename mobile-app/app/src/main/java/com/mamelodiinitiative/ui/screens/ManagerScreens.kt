@@ -1,31 +1,28 @@
 package com.mamelodiinitiative.ui.screens
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Pending
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -38,6 +35,62 @@ import com.mamelodiinitiative.ui.theme.GreenPrimary
 import com.mamelodiinitiative.ui.theme.TextSecondary
 import com.mamelodiinitiative.ui.utils.bounceClick
 import com.mamelodiinitiative.viewmodel.ManagerViewModel
+
+@Composable
+fun GuardedManagerScreen(
+    userRole: String?,
+    onNavigateHome: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    if (userRole in listOf("manager", "admin")) {
+        content()
+    } else {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AdminPanelSettings,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Text(
+                        text = "Access Restricted",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "You do not have manager or administrator permissions to access this portal.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = onNavigateHome,
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Text("Return to Home", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun ManagerDashboardScreen(
@@ -144,7 +197,7 @@ fun ManagerDashboardScreen(
             MetricCard(
                 title = "Total Applications",
                 count = appsState.data.size.toString(),
-                icon = Icons.Default.ListAlt,
+                icon = Icons.AutoMirrored.Filled.ListAlt,
                 color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.weight(1f),
                 onClick = { onNavigate(Routes.MANAGER_APPLICATIONS) }
@@ -165,7 +218,7 @@ fun ManagerDashboardScreen(
             modifier = Modifier.fillMaxWidth().height(56.dp).bounceClick(),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Icon(Icons.Default.ListAlt, null)
+            Icon(Icons.AutoMirrored.Filled.ListAlt, null)
             Spacer(Modifier.width(10.dp))
             Text("Review Applications ($pendingCount pending)", fontWeight = FontWeight.Bold)
         }
@@ -181,6 +234,46 @@ fun ManagerDashboardScreen(
             Icon(Icons.Default.Add, null)
             Spacer(Modifier.width(10.dp))
             Text("Create New Programme", fontWeight = FontWeight.Bold)
+        }
+
+        // Programmes Management Section
+        Text(
+            text = "Manage Programmes",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.ExtraBold
+        )
+
+        if (programmesState.data.isEmpty()) {
+            Text("No programmes found.", color = TextSecondary)
+        } else {
+            programmesState.data.forEach { prog ->
+                Card(
+                    onClick = {
+                        val identifier = prog.docId.ifBlank { prog.id.toString() }
+                        onNavigate(Routes.managerProgrammeEdit(identifier))
+                    },
+                    modifier = Modifier.fillMaxWidth().bounceClick(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(prog.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(prog.description, style = MaterialTheme.typography.bodySmall, color = TextSecondary, maxLines = 2)
+                        }
+                        TextButton(onClick = {
+                            val identifier = prog.docId.ifBlank { prog.id.toString() }
+                            onNavigate(Routes.managerProgrammeEdit(identifier))
+                        }) {
+                            Text("Edit", fontWeight = FontWeight.Bold, color = GreenPrimary)
+                        }
+                    }
+                }
+            }
         }
 
         if (appsState.data.isNotEmpty()) {
@@ -306,13 +399,26 @@ fun ManagerProgrammeEditScreen(
 ) {
     val programmesState by managerViewModel.programmesState.collectAsState()
     val isNew = docId == "new" || docId.isBlank()
-    val existingProgramme = if (!isNew) programmesState.data.firstOrNull { it.docId == docId || it.id.toString() == docId } else null
 
-    var title by remember { mutableStateOf(existingProgramme?.title.orEmpty()) }
-    var description by remember { mutableStateOf(existingProgramme?.description.orEmpty()) }
-    var imageUrl by remember { mutableStateOf(existingProgramme?.imageUrl.orEmpty()) }
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var imageUrl by remember { mutableStateOf("") }
     var isSaving by remember { mutableStateOf(false) }
+    var isDeleting by remember { mutableStateOf(false) }
+    var initialized by remember(docId) { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
+
+    LaunchedEffect(programmesState.data, docId) {
+        if (!isNew && !initialized) {
+            val existing = programmesState.data.firstOrNull { it.docId == docId || it.id.toString() == docId }
+            if (existing != null) {
+                title = existing.title
+                description = existing.description
+                imageUrl = existing.imageUrl.orEmpty()
+                initialized = true
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -369,8 +475,10 @@ fun ManagerProgrammeEditScreen(
                 if (title.isNotBlank() && description.isNotBlank()) {
                     isSaving = true
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    val existing = programmesState.data.firstOrNull { it.docId == docId || it.id.toString() == docId }
                     val pToSave = Programme(
-                        docId = if (isNew) "" else docId,
+                        docId = if (isNew) "" else (existing?.docId?.ifBlank { docId } ?: docId),
+                        id = existing?.id ?: 0,
                         title = title,
                         description = description,
                         imageUrl = imageUrl.ifBlank { null }
@@ -395,17 +503,27 @@ fun ManagerProgrammeEditScreen(
         if (!isNew) {
             OutlinedButton(
                 onClick = {
+                    isDeleting = true
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    managerViewModel.deleteProgramme(docId)
-                    onBack()
+                    val existing = programmesState.data.firstOrNull { it.docId == docId || it.id.toString() == docId }
+                    val targetDocId = existing?.docId?.ifBlank { docId } ?: docId
+                    managerViewModel.deleteProgramme(targetDocId) { success ->
+                        isDeleting = false
+                        if (success) onBack()
+                    }
                 },
+                enabled = !isDeleting,
                 modifier = Modifier.fillMaxWidth().height(56.dp).bounceClick(),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Icon(Icons.Default.Delete, null)
-                Spacer(Modifier.width(8.dp))
-                Text("Delete Programme", fontWeight = FontWeight.Bold)
+                if (isDeleting) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.error)
+                } else {
+                    Icon(Icons.Default.Delete, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Delete Programme", fontWeight = FontWeight.Bold)
+                }
             }
         }
     }

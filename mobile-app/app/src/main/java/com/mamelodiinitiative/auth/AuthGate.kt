@@ -1,7 +1,6 @@
 package com.mamelodiinitiative.auth
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -44,8 +43,81 @@ fun AuthGate(
     val state by authViewModel.uiState.collectAsState()
 
     if (state.user != null) {
-        content {
-            authViewModel.signOut()
+        when {
+            state.isProfileLoading || (state.profile == null && state.profileError == null) -> {
+                Box(
+                    modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        Text(
+                            text = "Loading your PHOENIX ORG profile...",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                }
+            }
+            state.profileError != null || state.profile == null -> {
+                Box(
+                    modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Error,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Text(
+                                text = "Profile Loading Error",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = state.profileError ?: "Unable to load your user profile. Please check your connection and retry.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Button(
+                                onClick = { authViewModel.retryProfileLoad() },
+                                modifier = Modifier.fillMaxWidth().height(50.dp),
+                                shape = RoundedCornerShape(14.dp)
+                            ) {
+                                Text("Retry", fontWeight = FontWeight.Bold)
+                            }
+                            OutlinedButton(
+                                onClick = { authViewModel.signOut() },
+                                modifier = Modifier.fillMaxWidth().height(50.dp),
+                                shape = RoundedCornerShape(14.dp)
+                            ) {
+                                Text("Sign Out", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+            else -> {
+                content {
+                    authViewModel.signOut()
+                }
+            }
         }
     } else {
         AuthScreen(
