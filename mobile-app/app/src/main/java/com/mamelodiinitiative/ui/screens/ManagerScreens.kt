@@ -141,6 +141,32 @@ fun ManagerDashboardScreen(
             }
         }
 
+        if (appsState.error != null) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Applications could not be loaded: \${appsState.error}",
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        }
+
+        if (programmesState.error != null) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Missions could not be loaded: \${programmesState.error}",
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        }
+
         if (actionStatus != null) {
             Card(
                 colors = CardDefaults.cardColors(containerColor = GreenLight),
