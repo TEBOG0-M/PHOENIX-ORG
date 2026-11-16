@@ -4,6 +4,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.mamelodiinitiative.data.models.VolunteerApplication
+import com.mamelodiinitiative.data.models.VolunteerProfile
 import kotlinx.coroutines.tasks.await
 
 class VolunteerRepository(
@@ -91,6 +92,39 @@ class VolunteerRepository(
         firestore.collection("applications").get().await().documents
             .map(::mapApplication)
             .sortedByDescending { it.createdAt }
+    }
+
+    suspend fun getAllVolunteers(): Result<List<VolunteerProfile>> = runCatching {
+        firestore.collection("users")
+            .whereEqualTo("role", "volunteer")
+            .get().await().documents
+            .map { document ->
+                val data = document.data.orEmpty()
+                val skills = when (val value = data["skills"]) {
+                    is List<*> -> value.filterIsInstance<String>()
+                    is String -> value.split(",").map(String::trim).filter(String::isNotEmpty)
+                    else -> emptyList()
+                }
+                val availability = when (val value = data["availability"]) {
+                    is List<*> -> value.filterIsInstance<String>()
+                    is String -> value.split(",").map(String::trim).filter(String::isNotEmpty)
+                    else -> emptyList()
+                }
+                VolunteerProfile(
+                    uid = document.getString("uid")?.ifBlank { document.id } ?: document.id,
+                    name = document.getString("name") ?: document.getString("fullName").orEmpty(),
+                    email = document.getString("email").orEmpty(),
+                    phone = document.getString("phone").orEmpty(),
+                    address = document.getString("address").orEmpty(),
+                    bio = document.getString("bio").orEmpty(),
+                    callSign = document.getString("callSign").orEmpty(),
+                    skills = skills,
+                    availability = availability,
+                    createdAt = document.getString("createdAt")
+                        ?: (data["createdAt"] as? com.google.firebase.Timestamp)?.toDate()?.toInstant()?.toString().orEmpty()
+                )
+            }
+            .sortedBy { it.name.lowercase() }
     }
 
     suspend fun updateApplicationStatus(applicationId: String, status: String): Result<Unit> = runCatching {

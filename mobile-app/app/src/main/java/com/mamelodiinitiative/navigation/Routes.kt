@@ -18,6 +18,7 @@ object Routes {
     // Manager Routes
     const val MANAGER_DASHBOARD = "manager_dashboard"
     const val MANAGER_APPLICATIONS = "manager_applications"
+    const val MANAGER_VOLUNTEERS = "manager_volunteers"
     const val MANAGER_PROGRAMME_EDIT = "manager_programme_edit/{docId}"
 
     fun programmeDetail(programmeId: String) = "programme_detail/$programmeId"

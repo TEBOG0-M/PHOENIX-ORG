@@ -6,6 +6,7 @@ import com.mamelodiinitiative.data.ProgrammeRepository
 import com.mamelodiinitiative.data.VolunteerRepository
 import com.mamelodiinitiative.data.models.Programme
 import com.mamelodiinitiative.data.models.VolunteerApplication
+import com.mamelodiinitiative.data.models.VolunteerProfile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +21,9 @@ class ManagerViewModel(
 
     private val _programmesState = MutableStateFlow(MainUiState<Programme>(isLoading = true))
     val programmesState: StateFlow<MainUiState<Programme>> = _programmesState.asStateFlow()
+
+    private val _volunteersState = MutableStateFlow(MainUiState<VolunteerProfile>(isLoading = true))
+    val volunteersState: StateFlow<MainUiState<VolunteerProfile>> = _volunteersState.asStateFlow()
 
     private val _actionStatus = MutableStateFlow<String?>(null)
     val actionStatus: StateFlow<String?> = _actionStatus.asStateFlow()
@@ -44,6 +48,27 @@ class ManagerViewModel(
 
         viewModelScope.launch {
             _programmesState.value = programmeRepository.getProgrammes()
+        }
+
+        loadVolunteers()
+    }
+
+
+    fun loadVolunteers() {
+        viewModelScope.launch {
+            _volunteersState.value = _volunteersState.value.copy(isLoading = true, error = null)
+            volunteerRepository.getAllVolunteers().fold(
+                onSuccess = { list ->
+                    _volunteersState.value = MainUiState(data = list, isLoading = false)
+                },
+                onFailure = { error ->
+                    _volunteersState.value = MainUiState(
+                        data = emptyList(),
+                        isLoading = false,
+                        error = error.localizedMessage ?: "Unable to load volunteers."
+                    )
+                }
+            )
         }
     }
 

@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mamelodiinitiative.data.models.Programme
 import com.mamelodiinitiative.data.models.VolunteerApplication
+import com.mamelodiinitiative.data.models.VolunteerProfile
 import com.mamelodiinitiative.navigation.Routes
 import com.mamelodiinitiative.ui.components.MamelodiBackButton
 import com.mamelodiinitiative.ui.theme.GreenLight
@@ -99,11 +100,12 @@ fun ManagerDashboardScreen(
 ) {
     val appsState by managerViewModel.applicationsState.collectAsState()
     val programmesState by managerViewModel.programmesState.collectAsState()
+    val volunteersState by managerViewModel.volunteersState.collectAsState()
     val actionStatus by managerViewModel.actionStatus.collectAsState()
     val haptic = LocalHapticFeedback.current
 
     val pendingCount = appsState.data.count { it.status == "pending" }
-    val approvedCount = appsState.data.count { it.status == "approved" }
+    val registeredVolunteerCount = volunteersState.data.size
     val programmesCount = programmesState.data.size
 
     LaunchedEffect(Unit) {
@@ -202,12 +204,12 @@ fun ManagerDashboardScreen(
                 onClick = { onNavigate(Routes.MANAGER_APPLICATIONS) }
             )
             MetricCard(
-                title = "Approved Volunteers",
-                count = approvedCount.toString(),
+                title = "Registered Volunteers",
+                count = registeredVolunteerCount.toString(),
                 icon = Icons.Default.CheckCircle,
                 color = GreenPrimary,
                 modifier = Modifier.weight(1f),
-                onClick = { onNavigate(Routes.MANAGER_APPLICATIONS) }
+                onClick = { onNavigate(Routes.MANAGER_VOLUNTEERS) }
             )
         }
 
@@ -247,6 +249,20 @@ fun ManagerDashboardScreen(
             Icon(Icons.AutoMirrored.Filled.ListAlt, null)
             Spacer(Modifier.width(10.dp))
             Text("Review Applications ($pendingCount pending)", fontWeight = FontWeight.Bold)
+        }
+
+
+        OutlinedButton(
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onNavigate(Routes.MANAGER_VOLUNTEERS)
+            },
+            modifier = Modifier.fillMaxWidth().height(56.dp).bounceClick(),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Icon(Icons.Default.AdminPanelSettings, null)
+            Spacer(Modifier.width(10.dp))
+            Text("Registered Volunteers", fontWeight = FontWeight.Bold)
         }
 
         OutlinedButton(
@@ -668,5 +684,161 @@ fun StatusBadge(status: String) {
             fontWeight = FontWeight.Black,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
         )
+    }
+}
+
+
+@Composable
+fun ManagerVolunteersScreen(
+    onBack: () -> Unit,
+    managerViewModel: ManagerViewModel = viewModel()
+) {
+    val state by managerViewModel.volunteersState.collectAsState()
+    val applicationsState by managerViewModel.applicationsState.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
+    val filtered = remember(state.data, searchQuery) {
+        val query = searchQuery.trim().lowercase()
+        if (query.isBlank()) state.data else state.data.filter { volunteer ->
+            listOf(volunteer.name, volunteer.email, volunteer.phone, volunteer.callSign)
+                .any { it.lowercase().contains(query) } ||
+                volunteer.skills.any { it.lowercase().contains(query) }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        managerViewModel.loadVolunteers()
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            MamelodiBackButton(onClick = onBack)
+            IconButton(onClick = { managerViewModel.loadVolunteers() }) {
+                Icon(Icons.Default.Refresh, contentDescription = "Refresh volunteers", tint = GreenPrimary)
+            }
+        }
+
+        Text(
+            "VOLUNTEER DIRECTORY",
+            color = GreenPrimary,
+            style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 1.sp),
+            fontWeight = FontWeight.Black
+        )
+        Text(
+            "Registered Volunteers",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.ExtraBold
+        )
+        Text(
+            "${state.data.size} registered volunteer profiles",
+            color = TextSecondary,
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Search volunteers") },
+            placeholder = { Text("Name, email, phone, call sign or skill") },
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp)
+        )
+
+        when {
+            state.isLoading -> Box(
+                modifier = Modifier.fillMaxWidth().padding(36.dp),
+                contentAlignment = Alignment.Center
+            ) { CircularProgressIndicator() }
+
+            state.error != null -> Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Volunteer profiles could not be loaded.", fontWeight = FontWeight.Bold)
+                    Text(state.error.orEmpty(), color = MaterialTheme.colorScheme.onErrorContainer)
+                    TextButton(onClick = { managerViewModel.loadVolunteers() }) { Text("Try again") }
+                }
+            }
+
+            filtered.isEmpty() -> Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(
+                    if (state.data.isEmpty()) "No registered volunteer profiles were found." else "No volunteers match your search.",
+                    modifier = Modifier.padding(20.dp),
+                    color = TextSecondary
+                )
+            }
+
+            else -> filtered.forEach { volunteer ->
+                val history = applicationsState.data.filter { it.uid == volunteer.uid }
+                VolunteerDirectoryCard(volunteer, history)
+            }
+        }
+    }
+}
+
+@Composable
+private fun VolunteerDirectoryCard(
+    volunteer: VolunteerProfile,
+    applicationHistory: List<VolunteerApplication>
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                volunteer.name.ifBlank { "Unnamed volunteer" },
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            if (volunteer.callSign.isNotBlank()) {
+                Text("Call sign: ${volunteer.callSign}", style = MaterialTheme.typography.bodySmall, color = GreenPrimary)
+            }
+            if (volunteer.email.isNotBlank()) Text(volunteer.email, style = MaterialTheme.typography.bodyMedium)
+            if (volunteer.phone.isNotBlank()) Text(volunteer.phone, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+            if (volunteer.address.isNotBlank()) Text(volunteer.address, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            if (volunteer.bio.isNotBlank()) Text(volunteer.bio, style = MaterialTheme.typography.bodyMedium)
+            if (volunteer.skills.isNotEmpty()) {
+                Text("Skills", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                Text(volunteer.skills.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            }
+            if (volunteer.availability.isNotEmpty()) {
+                Text("Availability: ${volunteer.availability.joinToString(", ")}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Text("Application history (${applicationHistory.size})", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            if (applicationHistory.isEmpty()) {
+                Text("No applications recorded.", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            } else {
+                applicationHistory.sortedByDescending { it.createdAt }.forEach { application ->
+                    val applicationLabel = application.missionTitle.ifBlank { "General volunteer application" }
+                    Text("$applicationLabel · ${application.status.replaceFirstChar { it.uppercase() }}", style = MaterialTheme.typography.bodySmall)
+                    if (application.createdAt.isNotBlank()) {
+                        Text(application.createdAt, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                    }
+                }
+            }
+            Text("Profile ID: ${volunteer.uid}", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+        }
     }
 }
