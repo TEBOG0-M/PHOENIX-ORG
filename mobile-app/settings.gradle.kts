@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MamelodiInitiative"
+rootProject.name = "PhoenixOrg"
 include(":app")
