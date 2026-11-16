@@ -22,7 +22,7 @@ Static HTML + modular JavaScript · Firebase Auth + Firestore · local demo mode
 ## Setup
 1. Copy your Firebase web config into `phoenox/assets/js/config.js` (already filled in).
 2. Firebase console → **Authentication**: enable Email/Password (+ Google if wanted).
-3. Firebase console → **Firestore → Rules**: paste the contents of `firestore.rules` → **Publish**.
+3. Firebase console → **Firestore → Rules**: deploy the website rules agreed with the website maintainer. This repository does not currently contain a website-specific `firestore.rules` file. Do not deploy `mobile-app/firestore.rules` to the shared project without reconciling the Android and website access requirements.
 4. Create a manager: register normally, then in Firestore `users/<uid>` set `role` to `manager`.
 5. Run locally: `cd phoenox && python3 -m http.server 8000` → http://localhost:8000
 6. Contact form email: send one test message and click the activation link FormSubmit emails to tshiredo15@gmail.com (one-time).
