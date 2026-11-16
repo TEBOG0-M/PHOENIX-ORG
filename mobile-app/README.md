@@ -1,199 +1,135 @@
 # PHOENIX ORG — Android Application
 
-A modern Android platform for exploring programmes, accessing organisational information, following news and submitting volunteer applications.
+The PHOENIX ORG Android application provides mobile access to organisational information, missions/programmes, news, volunteer applications and contact enquiries.
 
-The PHOENIX ORG Android application provides a mobile platform for community members to connect with the organisation and access its services from anywhere.
-
-Built with Kotlin and Jetpack Compose, the application follows modern Android development practices and integrates with the wider PHOENIX ORG backend ecosystem.
-
----
+Built with Kotlin and Jetpack Compose, the application uses Firebase Authentication and Cloud Firestore for its Android identity and data layer.
 
 ## Features
 
-### Authentication
-- User registration and sign-in using Firebase Authentication.
-- Application-level authentication gate for managing user sessions.
-- Secure sign-out functionality.
+- Email/password registration and sign-in using Firebase Authentication.
+- Authenticated session and Firestore profile handling.
+- Public organisational information and mission/programme listings.
+- Programme detail and manager programme-management flows.
+- News listing and article details.
+- Volunteer application submission and status retrieval.
+- Manager application review, subject to the user's Firestore role.
+- Contact enquiry submission.
+- Role-aware navigation and account settings.
+- Loading, empty and error states where implemented.
 
-### Home and Organisation
-- Home screen with organisational information.
-- About section describing the organisation.
-- Programme listings.
-- Individual programme detail pages.
+Donation screens provide information only unless a real payment integration is separately configured. The app must not represent an intention or form submission as a completed payment.
 
-### Volunteer Applications
-- Volunteer information and application entry point.
-- Multi-step application process.
-- Application review before submission.
-- Submission success screen.
-- Form state managed through a shared ViewModel.
-
-### News
-- News listing.
-- Individual news article details.
-
-### Additional Information
-- Donation information.
-- Contact information.
-- Additional organisational navigation.
-
-Note: The application provides donation information. It does not currently represent a payment-processing integration.
-
----
-
-## Technology Stack
+## Technology
 
 | Technology | Purpose |
-| --- | --- |
-| Kotlin | Application programming language |
-| Jetpack Compose | Declarative UI framework |
-| Material 3 | UI components and theming |
-| Android Navigation Compose | Screen navigation |
+|---|---|
+| Kotlin | Application language |
+| Jetpack Compose | UI framework |
+| Material 3 | UI components |
+| Navigation Compose | App navigation |
 | Firebase Authentication | User authentication |
-| Cloud Firestore | Existing cloud data integration |
-| Retrofit | HTTP API communication |
-| Gson | JSON serialization |
-| OkHttp | HTTP client and logging |
-| DataStore Preferences | Local preference storage |
-| Kotlin Coroutines | Asynchronous operations |
-| AndroidX Lifecycle | Lifecycle-aware state management |
+| Cloud Firestore | Application data |
+| Kotlin Coroutines / Flow | Asynchronous work and state |
+| AndroidX Lifecycle | Lifecycle-aware state |
+| DataStore Preferences | Local preferences, where used |
 
----
+The namespace and application ID remain `com.mamelodiinitiative` for compatibility with the configured Firebase Android application.
 
-## Project Structure
+## Firestore contract
 
-```
-mobile-app/
-├── app/
-│   ├── src/
-│   │   └── main/
-│   │       ├── java/
-│   │       │   └── com/mamelodiinitiative/
-│   │       │       ├── auth/
-│   │       │       ├── navigation/
-│   │       │       ├── ui/
-│   │       │       │   ├── components/
-│   │       │       │   ├── screens/
-│   │       │       │   └── theme/
-│   │       │       ├── viewmodel/
-│   │       │       └── MainActivity.kt
-│   │       └── AndroidManifest.xml
-│   └── build.gradle.kts
-├── build.gradle.kts
-└── README.md
-```
+The Android data layer uses these shared collection names:
 
-The package and namespace currently remain `com.mamelodiinitiative`. The PHOENIX ORG rebrand does not require changing these technical identifiers.
+| Collection | Purpose |
+|---|---|
+| `users/{uid}` | User profile; document ID is the Firebase Authentication UID |
+| `missions/{missionId}` | Public mission/programme content |
+| `applications/{applicationId}` | Volunteer applications; owner field is `uid` |
+| `news_articles/{articleId}` | Public news content |
+| `mail/{messageId}` | Contact enquiry submission |
+| `donations`, `pledges`, `notifications` | Shared platform collections; use only where a corresponding Android feature is implemented |
 
----
+The role values used by the shared platform include `member`, `volunteer`, `donor` and the privileged `manager` role. Public registration must never grant manager access. Manager privileges must be assigned through an authorized administrative process.
+
+The Firestore rules source is `firestore.rules`. It must be deployed to the same Firebase project used by the Android app. A successful source-code build does not confirm that rules are deployed or that runtime access is authorized.
+
+**Integration note:** The website's supplied rules currently differ on who may create `mail` documents. Android contact submission requires a narrowly validated public create permission. Reconcile this rule with the website developer before deploying shared rules.
 
 ## Requirements
 
-Before getting started, ensure that you have:
-
 - Android Studio
 - JDK 17
-- Android SDK 35
-- An Android device or emulator running Android 7.0 (API 24) or later
-- Access to the project's configured Firebase project
+- Android SDK matching the Gradle configuration
+- Access to the PHOENIX ORG Firebase project
+- Android emulator or physical Android device
 
----
-
-## Getting Started
+## Setup
 
 1. Clone the repository:
-```bash
-git clone https://github.com/TEBOG0-M/PHOENIX-ORG.git
+
+   ```bash
+   git clone https://github.com/TEBOG0-M/PHOENIX-ORG.git
+   ```
+
+2. Open the `mobile-app` directory in Android Studio.
+3. Add the Firebase Android configuration file:
+
+   ```
+   mobile-app/app/google-services.json
+   ```
+
+4. Sync Gradle.
+5. Run the application on a configured emulator or device.
+
+Never place manager passwords, service-account credentials or private keys in source code, configuration committed to Git, or application defaults.
+
+## Build and test
+
+Run from the `mobile-app` directory.
+
+**Windows**
+```powershell
+.\gradlew.bat assembleDebug
+.\gradlew.bat testDebugUnitTest
 ```
 
-2. Open the project:
-Open the `mobile-app` directory in Android Studio.
-
-3. Configure Firebase:
-Configure the Firebase Android application and place the corresponding `google-services.json` file inside:
-```
-mobile-app/app/google-services.json
-```
-
-4. Sync the project:
-Sync the project with Gradle and allow Android Studio to complete the dependency setup.
-
-5. Select a device:
-Select an Android emulator or connect a physical Android device.
-
-6. Build and run:
-Build and run the application from Android Studio.
-
-The configured Android build:
-- Targets SDK 35
-- Uses a minimum SDK of 24
-- Targets Java 17
-
----
-
-## Backend Integration
-
-The repository also contains a PHP REST API and MySQL database schema under `api/`.
-
-The API provides endpoints for:
-- Health checks
-- News retrieval
-- Contact submissions
-- Authenticated user profiles
-- Volunteer application submission, retrieval and withdrawal
-
-Authenticated API requests use Firebase ID tokens, which the PHP backend verifies before processing protected operations.
-
-Database integration status: The Android application has existing Firebase/Firestore integration, while the PHP API persists its records in MySQL. These are separate data stores in the current implementation. A unified MySQL-backed data flow is an integration requirement, not something this README claims is already complete.
-
-The intended architecture should use the same backend and database for the website and mobile application, with Firebase Authentication providing user identity where applicable.
-
----
-
-## Build and Testing
-
-The Android project is configured for:
-- Debug APK builds
-- Local JVM unit tests
-- Android instrumentation tests
-
-When the Gradle wrapper is available in the project, the following commands can be used from `mobile-app`:
-
+**macOS / Linux**
 ```bash
 ./gradlew assembleDebug
 ./gradlew testDebugUnitTest
 ```
 
-On Windows:
+GitHub Actions runs the debug build and JVM unit tests through `.github/workflows/android-ci.yml`. Successful runs upload a debug APK artifact. Check the repository's **Actions** tab for the actual run result.
 
-```cmd
-.\gradlew.bat assembleDebug
-.\gradlew.bat testDebugUnitTest
+## Project structure
+
 ```
-
-Build and test results should be verified against the current project before being treated as passing.
-
----
+mobile-app/
+├── app/
+│   └── src/main/
+│       ├── java/com/mamelodiinitiative/
+│       │   ├── auth/
+│       │   ├── data/
+│       │   ├── navigation/
+│       │   ├── ui/
+│       │   └── viewmodel/
+│       └── AndroidManifest.xml
+├── firestore.rules
+├── build.gradle.kts
+└── README.md
+```
 
 ## Security
 
-- Do not commit private credentials or signing keys.
-- Keep Firebase Configuration specific to the intended application.
-- Do not embed database credentials in the Android application.
-- Use HTTPS for production API communication.
-- Send Firebase ID tokens through authenticated API requests.
-- Validate user input on both the client and server.
+- Firestore rules are the authoritative data-access boundary.
+- User profile document IDs must match Firebase Authentication UIDs.
+- Volunteers may access only their own private records.
+- Manager operations must be authorized by Firestore rules.
+- Never trust a client-side role check as the only access control.
+- Validate data before writing it to Firestore.
+- Keep passwords and privileged credentials out of the repository.
+- Confirm the active Firebase project and deployed rules when investigating permission errors.
 
----
+## Related resources
 
-## Development Notes
-
-The Android application is part of the wider PHOENIX ORG project. Its development should remain aligned with the shared backend, database and organisational requirements.
-
-Existing package names, Firebase identifiers and backend contracts should only be changed when a confirmed technical requirement calls for it.
-
----
-
-## Project Repository
-
-[PHOENIX ORG — GitHub Repository](https://github.com/TEBOG0-M/PHOENIX-ORG)
+- [PHOENIX ORG repository](https://github.com/TEBOG0-M/PHOENIX-ORG)
+- [GitHub Actions](https://github.com/TEBOG0-M/PHOENIX-ORG/actions)
