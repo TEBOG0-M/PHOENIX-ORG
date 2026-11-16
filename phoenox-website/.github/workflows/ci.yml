@@ -1,0 +1,41 @@
+name: CI / Deploy
+
+on:
+  push: { branches: [main] }
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Syntax-check every JS module
+        run: |
+          set -e
+          for f in phoenox/assets/js/*.js; do node --check --input-type=module < "$f" && echo "ok $f"; done
+      - name: Check required files exist
+        run: |
+          for f in phoenox/index.html phoenox/pages/donate.html firestore.rules README.md; do test -f "$f" || { echo "missing $f"; exit 1; }; done
+      - name: Block accidental real-payment keys
+        run: "! grep -rEi 'sk_live|stripe_secret|payfast_merchant_key' phoenox || { echo 'secret found'; exit 1; }"
+
+  deploy:
+    needs: validate
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: { name: github-pages, url: "${{ steps.deploy.outputs.page_url }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: phoenox }
+      - id: deploy
+        uses: actions/deploy-pages@v4

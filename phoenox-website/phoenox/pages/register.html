@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Register — PHOENOX</title>
+  <meta name="description" content="Create a PHOENOX volunteer or donor account.">
+  <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-root="../" data-page="register">
+  <div id="site-header"></div>
+  <main id="main" class="">
+
+    <section class="auth-main"><div class="wrap">
+      <div class="auth-card wide">
+        <div class="auth-icon"><img class="logo-mark" src="../assets/logo.svg" alt="" width="56" height="56"></div>
+        <span class="badge-top">New account onboarding</span>
+        <h1>Join the PHOENOX Movement</h1>
+        <p class="sub">Create your profile to deploy into field missions, support humanitarian initiatives, or follow how your giving transforms lives.</p>
+        <form id="auth-form" novalidate>
+          <div class="form-msg" id="form-msg" hidden></div>
+          <div class="step-head" style="margin-top:0;border:0;padding:0"><h2>Select your primary commitment <span class="req">*</span></h2><small>STEP 1 OF 3</small></div>
+          <div class="role-pick" role="radiogroup" aria-label="Account type">
+            <label class="role-opt"><input type="radio" name="role" value="volunteer" checked><span class="radio"></span><div class="ico"><i data-i="heart-handshake"></i></div><h3>Field Volunteer</h3><p>Deploy to shelters, triage clinics, community workshops, and protective civilian accompaniment.</p></label>
+            <label class="role-opt"><input type="radio" name="role" value="donor"><span class="radio"></span><div class="ico"><i data-i="banknote"></i></div><h3>Donor / Sustainer</h3><p>Fund emergency deployments, inspect your live giving history, and manage monthly pledges.</p></label>
+          </div>
+          <label class="check neutral-opt"><input type="checkbox" id="neutral"><span><b>I just want to browse: keep me as a regular member</b><small>No volunteer or donor dashboard. You can still read the site, keep your details on file and update them any time. Untick this to choose a role above.</small></span></label>
+          <div class="note-strip"><i data-i="shield-check"></i>Regional coordinators and manager accounts are provisioned exclusively via administrative dispatch.</div>
+
+          <div class="step-head"><h2>Identity &amp; Communication</h2><small>STEP 2 OF 3</small></div>
+          <div class="field"><label for="name">Full legal name <span class="req">*</span></label><div class="control"><i data-i="user"></i><input id="name" type="text" placeholder="e.g. Nomvula Dlamini" autocomplete="name" required></div></div>
+          <div class="row-2">
+            <div class="field"><label for="email">Email address <span class="req">*</span></label><div class="control"><i data-i="mail"></i><input id="email" type="email" placeholder="nomvula@example.org" autocomplete="email" required></div></div>
+            <div class="field"><label for="phone">Mobile / WhatsApp <span class="req">*</span></label>
+              <div class="phone-row"><select id="cc" aria-label="Country code"><option>+27</option><option>+263</option><option>+258</option><option>+267</option><option>+264</option><option>+260</option><option>+234</option><option>+254</option><option>+44</option><option>+1</option></select><input id="phone" type="tel" placeholder="82 555 0192" autocomplete="tel-national" required></div></div>
+          </div>
+          <div class="row-2">
+            <div class="field"><label for="password">Password <span class="req">*</span></label><div class="control"><i data-i="lock"></i><input id="password" class="has-reveal" type="password" placeholder="••••••••••" autocomplete="new-password" required><button class="reveal" type="button" data-pw-toggle="password" aria-label="Show password"><i data-i="eye"></i></button></div></div>
+            <div class="field"><label for="confirm">Confirm password <span class="req">*</span></label><div class="control"><i data-i="shield-check"></i><input id="confirm" class="has-reveal" type="password" placeholder="••••••••••" autocomplete="new-password" required><button class="reveal" type="button" data-pw-toggle="confirm" aria-label="Show password"><i data-i="eye"></i></button></div></div>
+          </div>
+          <div class="strength" id="strength"><div class="top"><span>Credential security standard</span><span id="strength-label">Awaiting input</span></div><div class="bars"><i></i><i></i><i></i><i></i></div>
+            <div class="rules"><span data-r="len">8+ characters</span><span data-r="up">Uppercase letter</span><span data-r="num">1+ number</span><span data-r="sym">Symbol (!@#$)</span></div></div>
+
+          <div class="step-head"><h2>Safeguarding Governance</h2><small>STEP 3 OF 3</small></div>
+          <div class="field"><label class="check" id="c1-wrap"><input type="checkbox" id="c1"><span>I consent to identity verification and relevant background checks in compliance with PHOENOX child safeguarding and humanitarian security protocols.</span></label></div>
+          <div class="field"><label class="check"><input type="checkbox" id="c2" required><span>I agree to the PHOENOX <a href="privacy.html" target="_blank">Terms of Humanitarian Conduct &amp; Privacy Notice</a> and affirm that all submitted information is lawful and accurate.</span></label></div>
+          <button class="btn btn-primary btn-block btn-lg" type="submit" style="margin-top:8px">Create Account &amp; Access Portal <i data-i="arrow-right"></i></button>
+        </form>
+        <div class="hr-label">or sign up with</div>
+        <button class="btn-google" id="google-btn" type="button"><svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.6z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg> Continue with Google</button>
+        <p class="foot">Already have an authenticated account? <a href="login.html"><b>Sign In</b></a></p>
+      </div>
+      <div class="sandbox"><span class="ico"><i data-i="graduation"></i></span><div><b>Academic simulation sandbox</b><p>This registration flow operates within an accredited simulation environment. Please do not enter real sensitive personal information.</p></div></div>
+    </div></section>
+  </main>
+  <div id="site-footer"></div>
+  <script type="module" src="../assets/js/auth-page.js"></script>
+</body>
+</html>

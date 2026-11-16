@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Donate — PHOENOX</title>
+  <meta name="description" content="Give to a PHOENOX mission — once-off or monthly, in ZAR, USD or EUR.">
+  <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-root="../" data-page="donate">
+  <div id="site-header"></div>
+  <main id="main" class="">
+
+    <section class="page-hero" style="padding-bottom:64px"><div class="wrap"><h1>Fuel the journey from <em>survival</em> to independence.</h1>
+      <p style="max-width:680px">Every cent contributed directly sustains our shelters, vocational stipends, and legal clinics. Earmark your gift to an active field mission or empower our rapid-response emergency relief fund.</p></div></section>
+    <section class="section" style="padding-top:64px"><div class="wrap donate-grid">
+      <div>
+        <span class="eyebrow">Tangible providence</span><h2 style="font-size:1.7rem;margin-bottom:10px">Where Your Support Goes</h2>
+        <p class="muted">We map each financial allocation directly to measurable physical care, vocational training hours, and legal representation.</p>
+        <div id="tiers" style="margin-top:22px"></div>
+        <div class="sandbox-box"><b><i data-i="info"></i> Sandbox Demonstration Platform</b>This giving terminal operates exclusively as an academic simulation. No real funds or credit lines are charged. Anonymous contributions do not store browser tracking cookies.</div>
+      </div>
+      <div class="console" id="console">
+        <span class="eyebrow">Transaction console</span>
+        <h2>Make a Contribution</h2>
+        <div id="given-as"></div>
+        <form id="donate-form" novalidate>
+          <div class="form-msg" id="form-msg" hidden></div>
+          <div class="field"><span class="label">Frequency of gift</span>
+            <div class="seg" role="group" aria-label="Frequency"><button type="button" data-freq="once" class="on">Once-Off Gift</button><button type="button" data-freq="monthly">Monthly Sustainer</button></div>
+            <p class="hint" id="freq-hint" hidden></p></div>
+          <div class="field"><label for="mission">Earmark allocation <small>Where funds are deployed</small></label><select id="mission"></select></div>
+          <div class="field"><label>Select contribution amount <span class="currency" id="currency"><button type="button" data-cur="ZAR" class="on">ZAR (R)</button><span>|</span><button type="button" data-cur="USD">USD ($)</button><span>|</span><button type="button" data-cur="EUR">EUR (€)</button></span></label>
+            <div class="amounts" id="amounts"></div>
+            <div class="amount-input"><span id="cur-sym">R</span><input id="custom" type="number" min="1" step="1" inputmode="numeric" placeholder="Other bespoke amount…" aria-label="Other amount"></div>
+            <p class="err" id="amt-err"></p></div>
+          <div class="field" id="monthly-wrap" hidden><label for="monthly-amt">Monthly debit amount <small>(taken every month after today)</small></label>
+            <div class="amount-input"><span id="m-sym">R</span><input id="monthly-amt" type="number" min="1" step="1" inputmode="numeric" placeholder="Same as today’s gift"></div>
+            <p class="hint">Today’s gift above is taken straight away. After that, this amount is debited once a month. Leave it blank to repeat today’s amount. Change or pause it any time from your dashboard.</p><p class="err" id="mon-err"></p></div>
+          <div id="identity">
+            <div class="anon-box"><label class="check"><input type="checkbox" id="anon"><span><b>Make this donation anonymous</b><small>When selected, your name and email are kept confidential and hidden from public mission donor rolls. Anonymous gifts cannot be set up as monthly debit orders, because we need your details to process them.</small></span></label></div>
+            <div id="contact-fields">
+              <div class="row-2"><div class="field"><label for="d-name">Full name <small>(required unless anonymous)</small></label><input id="d-name" type="text" placeholder="e.g. Jordan Venter" autocomplete="name"></div>
+                <div class="field"><label for="d-email">Email address <small>(for tax receipt)</small></label><input id="d-email" type="email" placeholder="e.g. j.venter@sanctuary.org" autocomplete="email"></div></div>
+              <div class="field"><label for="d-phone">Phone number <small>(required unless anonymous)</small></label><input id="d-phone" type="tel" placeholder="e.g. 082 555 0192" autocomplete="tel"></div>
+            </div>
+          </div>
+          <div class="field"><span class="label">Simulated settlement route</span>
+            <div class="methods" id="methods">
+              <button type="button" class="method on" data-m="card"><i data-i="card"></i><span><b>Card</b><small>Visa / Mastercard</small></span></button>
+              <button type="button" class="method" data-m="eft"><i data-i="landmark"></i><span><b>Instant EFT</b><small>Capitec, Nedbank…</small></span></button>
+              <button type="button" class="method" data-m="snapscan"><i data-i="qr"></i><span><b>SnapScan</b><small>Instant mobile QR</small></span></button>
+            </div></div>
+          <button class="btn btn-deep btn-block btn-lg" id="submit" type="submit">Authorize R500 Contribution (Simulated) <i data-i="arrow-right"></i></button>
+          <p class="secure-line"><i data-i="lock"></i><span>Secure simulated SSL gateway. No charges debited. An auto-generated confirmation is shown on completion.</span></p>
+        </form>
+      </div>
+    </div></section>
+    <div class="demo-strip"><div class="wrap"><b>PHOENOX Humanitarian Initiative — Simulated Academic Demonstration</b><span>All transactional endpoints are mock services. Data remains localized.</span></div></div>
+  </main>
+  <div id="site-footer"></div>
+  <script type="module" src="../assets/js/donate.js"></script>
+</body>
+</html>

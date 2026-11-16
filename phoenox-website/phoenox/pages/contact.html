@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact — PHOENOX</title>
+  <meta name="description" content="Contact the PHOENOX outreach team.">
+  <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-root="../" data-page="contact">
+  <div id="site-header"></div>
+  <main id="main" class="">
+
+    <section class="page-hero"><div class="wrap"><h1>We’d love to hear from you.</h1><p>Questions, partnership ideas, or a person who needs help right now? Reach our outreach team and we’ll respond as quickly as we can.</p></div></section>
+    <section class="section"><div class="wrap contact-grid">
+      <div>
+        <div class="info-row"><span class="ico"><i data-i="mail"></i></span><div><b>Email</b><span>tshiredo15@gmail.com</span></div></div>
+        <div class="info-row"><span class="ico"><i data-i="phone"></i></span><div><b>Outreach line</b><span>+27 12 000 0000 · 24 hours</span></div></div>
+        <div class="info-row"><span class="ico"><i data-i="map-pin"></i></span><div><b>Head office</b><span>Pretoria, Gauteng, South Africa</span></div></div>
+        <div class="callout warn" style="margin-top:28px"><i data-i="info"></i><span><b>If someone is in immediate danger,</b> contact the South African Police Service on <b>10111</b> or the national emergency number <b>112</b> from a cellphone. Do not wait for an email reply.</span></div>
+      </div>
+      <form class="console" id="contact-form" novalidate>
+        <h2>Send us a message</h2>
+        <div class="form-msg" id="form-msg" hidden></div>
+        <div class="row-2">
+          <div class="field"><label for="name">Your name <span class="req">*</span></label><input id="name" type="text" required autocomplete="name"></div>
+          <div class="field"><label for="email">Email <span class="req">*</span></label><input id="email" type="email" required autocomplete="email"></div>
+        </div>
+        <div class="field"><label for="subject">Topic</label><select id="subject"><option>General enquiry</option><option>Volunteering</option><option>Donations &amp; receipts</option><option>Partnerships &amp; media</option><option>I know someone who needs help</option></select></div>
+        <div class="field"><label for="message">Message <span class="req">*</span></label><textarea id="message" required maxlength="2000"></textarea></div>
+        <button class="btn btn-deep btn-block btn-lg" type="submit">Send message <i data-i="arrow-right"></i></button>
+      </form>
+    </div></section>
+  </main>
+  <div id="site-footer"></div>
+  <script type="module" src="../assets/js/contact.js"></script>
+</body>
+</html>
