@@ -1,37 +1,61 @@
-# PHOENIX ORG — DevOps architecture
+# Android delivery architecture
 
-## Delivery flow
-Developer workstation → feature branch and meaningful commits → Azure Repos → pull request/review → Azure Pipelines → Gradle build and unit tests → build result and debug APK artifact → physical-device validation.
+This document describes the Android delivery configuration in this repository. GitHub is the current source repository. Azure Pipelines is retained as an additional pipeline configuration.
 
-Azure Boards tracks work from New → Active → Resolved/Closed. Link pull requests to work items where practical.
+## Source control
 
-## Service responsibilities
-- **Azure Repos:** source code and history. Keep `main` stable; use `feature/<short-name>` branches.
-- **Azure Boards:** backlog, ownership, progress and bugs.
-- **Azure Pipelines:** automatically run Android build and JVM unit tests on push/PR to `main` and `develop`.
-- **README:** prerequisites, setup, architecture, build/test instructions and team workflow.
+- **GitHub repository:** `TEBOG0-M/PHOENIX-ORG`
+- **Primary branch:** `main`
+- Keep commits focused and use descriptive commit messages.
+- Use short-lived feature or maintenance branches for changes that need review.
+- Do not commit generated build output, local IDE state, credentials or machine-specific configuration.
 
-## Security and evidence
-Never commit passwords, tokens, signing keys, service-account JSON or personal access tokens. Keep evidence genuine: do not claim a pipeline passed until a real run succeeds. Pipeline build success does not replace physical-device testing.
+## Continuous integration
 
-## Working while school DevOps access is blocked
-1. Continue in the existing local Git repository.
-2. Make small, meaningful local commits if Git is configured.
-3. Keep backlog and architecture documentation in the repository.
-4. When access returns, create/import the Azure project, push to Azure Repos, create a pipeline from `azure-pipelines.yml`, authorize it, and verify a real successful run.
+### GitHub Actions
 
-## Planned system boundaries
-- Android: Kotlin, Jetpack Compose, ViewModels.
-- Authentication: Firebase Authentication, email/password in this milestone.
-- User preferences/profile: after auth verification.
-- REST API + relational database: separate later milestone to satisfy the brief's API and database-table requirements.
-- Avoid duplicating the same source of truth across Firestore and SQL without a clear reason.
+Workflow: `.github/workflows/android-ci.yml`
 
-## Milestone gates
-1. Existing app builds and installs.
-2. Firebase email registration/login verified.
-3. Core screens and validation completed.
-4. API and relational schema deployed; seed at least 10 records in each applicable table.
-5. Automated tests cover important business logic.
-6. Azure Pipeline succeeds after access is restored.
-7. Complete workflow is tested on a physical device and genuine demo evidence captured.
+The workflow is configured to:
+1. Check out the repository.
+2. Set up JDK 17.
+3. Configure Gradle.
+4. Run `assembleDebug` and `testDebugUnitTest`.
+5. Upload the debug APK and unit-test reports when available.
+
+### Azure Pipelines
+
+Configuration: `mobile-app/azure-pipelines.yml`
+
+The pipeline runs the Android build and JVM unit tests and publishes build/test artifacts. It requires an Azure DevOps pipeline to be created and authorized against this repository.
+
+A YAML file is configuration, not evidence of a successful pipeline. Verify the actual run and artifact before reporting delivery success.
+
+## Android architecture
+
+- **Presentation:** Jetpack Compose screens and navigation.
+- **State:** ViewModels expose UI state using Kotlin Flow.
+- **Data access:** repository classes encapsulate Firebase operations.
+- **Authentication:** Firebase Authentication.
+- **Database:** Cloud Firestore.
+- **Authorization:** Firestore security rules; client-side route guards are supplementary.
+
+## Firebase operations
+
+The Android Firestore rules source is `mobile-app/firestore.rules`. Review the rules against the shared website data contract before deployment. Deploying rules is a separate Firebase Console or Firebase CLI operation and is not performed by the Android build pipeline.
+
+Do not store manager credentials or Firebase Admin service-account keys in the repository. Assign privileged roles through an authorized administrative process.
+
+## Release verification
+
+Before treating a build as a release candidate:
+
+1. Confirm the commit SHA.
+2. Confirm the correct Firebase Android configuration is used.
+3. Run the build and unit tests.
+4. Install the resulting APK on a physical device.
+5. Verify authentication and the main user journeys.
+6. Verify manager operations against deployed Firestore rules.
+7. Capture genuine test evidence and record known limitations.
+
+Build success alone does not establish that Firebase configuration, deployed rules, data or runtime flows are correct.
