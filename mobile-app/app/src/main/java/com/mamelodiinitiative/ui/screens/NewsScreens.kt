@@ -31,7 +31,8 @@ import com.mamelodiinitiative.viewmodel.MainUiState
 @Composable
 fun NewsScreen(
     state: MainUiState<NewsItem> = MainUiState(),
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    onRetry: () -> Unit = {}
 ) {
     val haptic = LocalHapticFeedback.current
     var visible by remember { mutableStateOf(false) }
@@ -69,19 +70,31 @@ fun NewsScreen(
             }
         }
 
-        if (state.isFallback) {
+        if (state.error != null && !state.isLoading) {
             Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)),
-                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "Demo Content — Cloud sync offline. Showing demonstration news articles.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.padding(14.dp),
-                    fontWeight = FontWeight.Bold
-                )
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        "News could not be loaded",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Text(
+                        state.error.orEmpty(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    TextButton(onClick = onRetry) {
+                        Text("Try again")
+                    }
+                }
             }
         }
 
@@ -92,7 +105,7 @@ fun NewsScreen(
             ) {
                 CircularProgressIndicator(color = GreenPrimary)
             }
-        } else if (state.data.isEmpty()) {
+        } else if (state.data.isEmpty() && state.error == null) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
