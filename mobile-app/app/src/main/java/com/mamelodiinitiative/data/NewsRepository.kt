@@ -1,49 +1,52 @@
 package com.mamelodiinitiative.data
 
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import com.mamelodiinitiative.data.models.NewsItem
-import com.mamelodiinitiative.data.sampledata.sampleNews
 import com.mamelodiinitiative.viewmodel.MainUiState
 import kotlinx.coroutines.tasks.await
 
 class NewsRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
-    suspend fun getNews(): MainUiState<NewsItem> {
-        return try {
-            val snapshot = firestore.collection("news_articles")
-                .orderBy("publishedAt", Query.Direction.DESCENDING)
-                .get()
-                .await()
-            if (!snapshot.isEmpty) {
-                val newsItems = snapshot.documents.mapIndexed { index, doc ->
-                    val item = doc.toObject(NewsItem::class.java) ?: NewsItem()
-                    item.copy(
-                        docId = doc.id,
-                        id = if (item.id != 0) item.id else (index + 1)
-                    )
-                }
-                MainUiState(data = newsItems, isLoading = false, error = null, isFallback = false)
-            } else {
-                MainUiState(data = sampleNews, isLoading = false, error = null, isFallback = true)
-            }
-        } catch (e: Exception) {
-            try {
-                val snapshot = firestore.collection("news_articles").get().await()
-                if (!snapshot.isEmpty) {
-                    val newsItems = snapshot.documents.mapIndexed { index, doc ->
-                        val item = doc.toObject(NewsItem::class.java) ?: NewsItem()
-                        item.copy(
-                            docId = doc.id,
-                            id = if (item.id != 0) item.id else (index + 1)
-                        )
-                    }
-                    return MainUiState(data = newsItems, isLoading = false, error = null, isFallback = false)
-                }
-            } catch (_: Exception) {}
+    suspend fun getNews(): MainUiState<NewsItem> = try {
+        val snapshot = firestore.collection("news_articles").get().await()
+        val newsItems = snapshot.documents.mapIndexedNotNull { index, document ->
+            val data = document.data.orEmpty()
+            val title = data["title"] as? String ?: return@mapIndexedNotNull null
+            val publishedAt = data["publishedAt"] as? Timestamp
+            val date = (data["date"] as? String)
+                ?: (data["publishedAt"] as? String)
+                ?: publishedAt?.toDate()?.toString()
+                ?: (data["createdAt"] as? String)
+                ?: ""
 
-            MainUiState(data = sampleNews, isLoading = false, error = e.localizedMessage, isFallback = true)
-        }
+            NewsItem(
+                id = (data["id"] as? Number)?.toInt() ?: index + 1,
+                docId = document.id,
+                title = title,
+                description = data["summary"] as? String
+                    ?: data["description"] as? String
+                    ?: data["body"] as? String
+                    ?: "",
+                date = date,
+                imageUrl = data["imageUrl"] as? String ?: data["image"] as? String,
+                publishedAt = publishedAt
+            )
+        }.sortedByDescending { it.publishedAt?.toDate()?.time ?: 0L }
+
+        MainUiState(
+            data = newsItems,
+            isLoading = false,
+            error = null,
+            isFallback = false
+        )
+    } catch (error: Exception) {
+        MainUiState(
+            data = emptyList(),
+            isLoading = false,
+            error = error.localizedMessage ?: "Unable to load news articles.",
+            isFallback = false
+        )
     }
 }
