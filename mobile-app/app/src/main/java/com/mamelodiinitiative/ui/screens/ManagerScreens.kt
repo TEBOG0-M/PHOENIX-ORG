@@ -311,6 +311,7 @@ fun ManagerApplicationsScreen(
     managerViewModel: ManagerViewModel = viewModel()
 ) {
     val appsState by managerViewModel.applicationsState.collectAsState()
+    val actionStatus by managerViewModel.actionStatus.collectAsState()
     var selectedFilter by remember { mutableStateOf("all") }
     val haptic = LocalHapticFeedback.current
 
@@ -352,6 +353,29 @@ fun ManagerApplicationsScreen(
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.ExtraBold
         )
+
+        if (actionStatus != null) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (actionStatus!!.startsWith("Failed")) MaterialTheme.colorScheme.errorContainer else GreenLight
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        actionStatus.orEmpty(),
+                        modifier = Modifier.weight(1f),
+                        color = if (actionStatus!!.startsWith("Failed")) MaterialTheme.colorScheme.onErrorContainer else GreenPrimary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    TextButton(onClick = { managerViewModel.clearActionStatus() }) { Text("Dismiss") }
+                }
+            }
+        }
 
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             SegmentedButton(
