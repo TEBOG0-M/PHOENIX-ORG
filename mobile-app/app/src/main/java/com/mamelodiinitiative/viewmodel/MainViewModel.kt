@@ -29,7 +29,12 @@ class MainViewModel(
         viewModelScope.launch {
             _programmesState.value = programmeRepository.getProgrammes()
         }
+        loadNews()
+    }
+
+    fun loadNews() {
         viewModelScope.launch {
+            _newsState.value = MainUiState(isLoading = true)
             _newsState.value = newsRepository.getNews()
         }
     }
