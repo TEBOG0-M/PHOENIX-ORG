@@ -336,7 +336,7 @@ fun ManagerApplicationsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             MamelodiBackButton(onClick = onBack)
-            IconButton(onClick = { managerViewModel.loadManagerData() }) {
+            IconButton(onClick = { managerViewModel.refreshApplications() }) {
                 Icon(Icons.Default.Refresh, contentDescription = "Refresh applications", tint = GreenPrimary)
             }
         }
@@ -419,7 +419,7 @@ fun ManagerApplicationsScreen(
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Applications could not be loaded.", fontWeight = FontWeight.Bold)
                     Text(appsState.error.orEmpty(), color = MaterialTheme.colorScheme.onErrorContainer)
-                    TextButton(onClick = { managerViewModel.loadManagerData() }) {
+                    TextButton(onClick = { managerViewModel.refreshApplications() }) {
                         Text("Try again")
                     }
                 }
