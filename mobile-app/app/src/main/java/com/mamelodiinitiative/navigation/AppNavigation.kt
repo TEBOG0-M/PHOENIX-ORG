@@ -142,7 +142,8 @@ fun AppNavigation(
             composable(Routes.NEWS) {
                 NewsScreen(
                     state = newsState,
-                    onNavigate = navController::navigate
+                    onNavigate = navController::navigate,
+                    onRetry = mainViewModel::loadNews
                 )
             }
 
