@@ -233,37 +233,10 @@ fun ManagerDashboardScreen(
         }
 
         Text(
-            text = "Management Actions",
+            text = "Quick action",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.ExtraBold
         )
-
-        Button(
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onNavigate(Routes.MANAGER_APPLICATIONS)
-            },
-            modifier = Modifier.fillMaxWidth().height(56.dp).bounceClick(),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Icon(Icons.AutoMirrored.Filled.ListAlt, null)
-            Spacer(Modifier.width(10.dp))
-            Text("Review Applications ($pendingCount pending)", fontWeight = FontWeight.Bold)
-        }
-
-
-        OutlinedButton(
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onNavigate(Routes.MANAGER_VOLUNTEERS)
-            },
-            modifier = Modifier.fillMaxWidth().height(56.dp).bounceClick(),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Icon(Icons.Default.AdminPanelSettings, null)
-            Spacer(Modifier.width(10.dp))
-            Text("Registered Volunteers", fontWeight = FontWeight.Bold)
-        }
 
         OutlinedButton(
             onClick = {
