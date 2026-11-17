@@ -124,11 +124,16 @@ class VolunteerViewModel(
             if (activeUid != uid || auth.currentUser?.uid != uid) return@launch
 
             _uiState.value = result.fold(
-                onSuccess = {
+                onSuccess = { applicationId ->
                     _uiState.value.copy(
                         isLoading = false,
                         isSuccess = true,
-                        existingApplication = submitted.copy(uid = uid, status = "pending")
+                        existingApplication = submitted.copy(
+                            id = applicationId,
+                            uid = uid,
+                            status = "pending",
+                            createdAt = java.time.Instant.now().toString()
+                        )
                     )
                 },
                 onFailure = {
