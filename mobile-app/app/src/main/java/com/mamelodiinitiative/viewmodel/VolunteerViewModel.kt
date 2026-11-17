@@ -3,8 +3,10 @@ package com.mamelodiinitiative.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuth.AuthStateListener
 import com.mamelodiinitiative.data.VolunteerRepository
 import com.mamelodiinitiative.data.models.VolunteerApplication
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,7 +18,8 @@ data class VolunteerUiState(
     val isLoading: Boolean = false,
     val isCheckingStatus: Boolean = false,
     val isSuccess: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val userUid: String? = null
 )
 
 class VolunteerViewModel(
@@ -26,18 +29,64 @@ class VolunteerViewModel(
     private val _uiState = MutableStateFlow(VolunteerUiState())
     val uiState: StateFlow<VolunteerUiState> = _uiState.asStateFlow()
 
+    private var activeUid: String? = null
+    private var applicationLoadJob: Job? = null
+
+    private val authStateListener = AuthStateListener { firebaseAuth ->
+        handleUserChanged(firebaseAuth.currentUser?.uid)
+    }
+
     init {
-        loadUserApplication()
+        auth.addAuthStateListener(authStateListener)
+    }
+
+    private fun handleUserChanged(uid: String?) {
+        if (uid == activeUid) return
+
+        activeUid = uid
+        applicationLoadJob?.cancel()
+
+        // Never retain another account's application or unfinished form data.
+        _uiState.value = VolunteerUiState(
+            userUid = uid,
+            isCheckingStatus = uid != null
+        )
+
+        if (uid != null) {
+            loadUserApplication(uid)
+        }
     }
 
     fun loadUserApplication() {
-        val uid = auth.currentUser?.uid ?: return
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isCheckingStatus = true)
+        val uid = auth.currentUser?.uid
+        if (uid == null) {
+            handleUserChanged(null)
+            return
+        }
+
+        if (uid != activeUid) {
+            handleUserChanged(uid)
+            return
+        }
+
+        loadUserApplication(uid)
+    }
+
+    private fun loadUserApplication(uid: String) {
+        applicationLoadJob?.cancel()
+        _uiState.value = _uiState.value.copy(
+            existingApplication = null,
+            isCheckingStatus = true,
+            userUid = uid
+        )
+
+        applicationLoadJob = viewModelScope.launch {
             val result = repository.getLatestUserApplication(uid)
-            val app = result.getOrNull()
+            // A slow response from a previous account must never overwrite the new session.
+            if (activeUid != uid || auth.currentUser?.uid != uid) return@launch
+
             _uiState.value = _uiState.value.copy(
-                existingApplication = app,
+                existingApplication = result.getOrNull()?.takeIf { it.uid == uid },
                 isCheckingStatus = false
             )
         }
@@ -60,20 +109,41 @@ class VolunteerViewModel(
     fun submitApplication() {
         if (_uiState.value.isLoading) return
 
+        val uid = auth.currentUser?.uid
+        if (uid == null || uid != activeUid) {
+            _uiState.value = _uiState.value.copy(error = "Please sign in again before submitting.")
+            return
+        }
+
+        val submitted = _uiState.value.application
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            val result = repository.submitApplication(_uiState.value.application)
+            val result = repository.submitApplication(submitted)
+
+            // Ignore completion from a session that has since signed out or changed accounts.
+            if (activeUid != uid || auth.currentUser?.uid != uid) return@launch
+
             _uiState.value = result.fold(
                 onSuccess = {
-                    val submitted = _uiState.value.application
                     _uiState.value.copy(
                         isLoading = false,
                         isSuccess = true,
-                        existingApplication = submitted.copy(status = "pending")
+                        existingApplication = submitted.copy(uid = uid, status = "pending")
                     )
                 },
-                onFailure = { _uiState.value.copy(isLoading = false, error = it.localizedMessage ?: "Submission failed") }
+                onFailure = {
+                    _uiState.value.copy(
+                        isLoading = false,
+                        error = it.localizedMessage ?: "Submission failed"
+                    )
+                }
             )
         }
+    }
+
+    override fun onCleared() {
+        auth.removeAuthStateListener(authStateListener)
+        applicationLoadJob?.cancel()
+        super.onCleared()
     }
 }

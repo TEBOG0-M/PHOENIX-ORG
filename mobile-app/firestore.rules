@@ -45,8 +45,8 @@ service cloud.firestore {
       allow create: if isOwner(userId)
         && request.resource.data.uid == request.auth.uid
         && validPublicRole(request.resource.data.role)
-        && request.resource.data.fullName is string
-        && request.resource.data.fullName.size() > 0;
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0;
 
       allow update: if (
           isOwner(userId)
@@ -63,8 +63,8 @@ service cloud.firestore {
         && getUserRole() == 'volunteer'
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.status == 'pending'
-        && request.resource.data.fullName is string
-        && request.resource.data.fullName.size() > 0
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
         && request.resource.data.email is string
         && request.resource.data.email.size() > 0;
 
@@ -73,7 +73,7 @@ service cloud.firestore {
 
       allow update: if (isManager() || isAdmin())
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
-        && request.resource.data.status in ['approved', 'rejected'];
+        && request.resource.data.status in ['accepted', 'declined'];
 
       allow delete: if isAdmin();
     }

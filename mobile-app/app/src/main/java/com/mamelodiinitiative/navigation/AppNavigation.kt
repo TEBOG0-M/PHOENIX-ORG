@@ -23,6 +23,7 @@ import com.mamelodiinitiative.ui.screens.HomeScreen
 import com.mamelodiinitiative.ui.screens.ManagerApplicationsScreen
 import com.mamelodiinitiative.ui.screens.ManagerDashboardScreen
 import com.mamelodiinitiative.ui.screens.ManagerProgrammeEditScreen
+import com.mamelodiinitiative.ui.screens.ManagerVolunteersScreen
 import com.mamelodiinitiative.ui.screens.MoreScreen
 import com.mamelodiinitiative.ui.screens.NewsDetailScreen
 import com.mamelodiinitiative.ui.screens.NewsScreen
@@ -210,6 +211,19 @@ fun AppNavigation(
                     onNavigateHome = { navController.navigate(Routes.HOME) { popUpTo(Routes.HOME) { inclusive = true } } }
                 ) {
                     ManagerApplicationsScreen(
+                        onBack = { navController.popBackStack() },
+                        managerViewModel = managerViewModel
+                    )
+                }
+            }
+
+
+            composable(Routes.MANAGER_VOLUNTEERS) {
+                GuardedManagerScreen(
+                    userRole = authUiState.profile?.role,
+                    onNavigateHome = { navController.navigate(Routes.HOME) { popUpTo(Routes.HOME) { inclusive = true } } }
+                ) {
+                    ManagerVolunteersScreen(
                         onBack = { navController.popBackStack() },
                         managerViewModel = managerViewModel
                     )

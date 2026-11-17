@@ -20,22 +20,8 @@ class AuthRepository(
     suspend fun register(email: String, password: String, fullName: String): Result<FirebaseUser> = runCatching {
         val result = auth.createUserWithEmailAndPassword(email.trim(), password).await()
         val user = requireNotNull(result.user) { "No user returned after registration." }
-
         val cleanName = fullName.trim().ifBlank { email.substringBefore("@") }
-        val profile = UserProfile(
-            uid = user.uid,
-            fullName = cleanName,
-            email = user.email.orEmpty().ifBlank { email.trim() },
-            role = "volunteer",
-            createdAt = Timestamp.now()
-        )
-
-        runCatching {
-            firestore.collection("users").document(user.uid).set(profile).await()
-        }.onFailure {
-            // Retry profile creation once
-            firestore.collection("users").document(user.uid).set(profile).await()
-        }
+        writeWebsiteProfile(user, cleanName, "volunteer")
         user
     }
 
@@ -48,57 +34,64 @@ class AuthRepository(
         val docRef = firestore.collection("users").document(user.uid)
         val doc = docRef.get().await()
         if (doc.exists()) {
-            val uid = doc.getString("uid").orEmpty().ifBlank { user.uid }
-            val fullName = doc.getString("fullName").orEmpty().ifBlank {
+            val fullName = (doc.getString("name") ?: doc.getString("fullName")).orEmpty().ifBlank {
                 user.displayName.orEmpty().ifBlank { user.email?.substringBefore("@").orEmpty() }
             }
-            val email = doc.getString("email").orEmpty().ifBlank { user.email.orEmpty() }
-            val role = doc.getString("role").orEmpty().ifBlank { "volunteer" }
-            val createdAt = parseTimestamp(doc.get("createdAt"))
-
             return UserProfile(
-                uid = uid,
+                uid = doc.getString("uid").orEmpty().ifBlank { user.uid },
                 fullName = fullName,
-                email = email,
-                role = role,
-                createdAt = createdAt
+                email = doc.getString("email").orEmpty().ifBlank { user.email.orEmpty() },
+                role = doc.getString("role").orEmpty().ifBlank { "volunteer" },
+                createdAt = parseTimestamp(doc.get("createdAt"))
             )
         }
-        // Recover missing or incomplete profile only when document does not exist
-        val fallbackProfile = UserProfile(
+
+        val name = user.displayName.orEmpty().ifBlank { user.email?.substringBefore("@").orEmpty() }
+        writeWebsiteProfile(user, name, "volunteer")
+        return UserProfile(
             uid = user.uid,
-            fullName = user.displayName.orEmpty().ifBlank { user.email?.substringBefore("@").orEmpty() },
+            fullName = name,
             email = user.email.orEmpty(),
             role = "volunteer",
             createdAt = Timestamp.now()
         )
-        docRef.set(fallbackProfile).await()
-        return fallbackProfile
     }
 
-    private fun parseTimestamp(value: Any?): Timestamp? {
-        return when (value) {
-            is Timestamp -> value
-            is Date -> Timestamp(value)
-            is Number -> Timestamp(Date(value.toLong()))
-            is String -> {
-                val formats = listOf(
-                    SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") },
-                    SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") },
-                    SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.getDefault()),
-                    SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()),
-                    SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                )
-                for (fmt in formats) {
-                    try {
-                        val parsed = fmt.parse(value)
-                        if (parsed != null) return Timestamp(parsed)
-                    } catch (_: Exception) {}
-                }
-                null
+    private suspend fun writeWebsiteProfile(user: FirebaseUser, name: String, role: String) {
+        firestore.collection("users").document(user.uid).set(
+            mapOf(
+                "uid" to user.uid,
+                "name" to name,
+                "email" to user.email.orEmpty(),
+                "role" to role,
+                "phone" to "",
+                "address" to "",
+                "bio" to "",
+                "callSign" to "",
+                "skills" to emptyList<String>(),
+                "availability" to emptyList<String>(),
+                "createdAt" to java.time.Instant.now().toString()
+            )
+        ).await()
+    }
+
+    private fun parseTimestamp(value: Any?): Timestamp? = when (value) {
+        is Timestamp -> value
+        is Date -> Timestamp(value)
+        is Number -> Timestamp(Date(value.toLong()))
+        is String -> {
+            val formats = listOf(
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") },
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") },
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.getDefault()),
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()),
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            )
+            formats.firstNotNullOfOrNull { format ->
+                runCatching { format.parse(value)?.let(::Timestamp) }.getOrNull()
             }
-            else -> null
         }
+        else -> null
     }
 
     fun signOut() = auth.signOut()
