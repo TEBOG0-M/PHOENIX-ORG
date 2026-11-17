@@ -42,7 +42,7 @@ fun VolunteerScreen(
     onNavigate: (String) -> Unit,
     uiState: VolunteerUiState = VolunteerUiState()
 ) {
-    val existingApp = uiState.existingApplication
+    val existingApp = uiState.existingApplication?.takeIf { it.uid.isNotBlank() && it.uid == uiState.userUid }
 
     Column(
         Modifier
@@ -69,7 +69,33 @@ fun VolunteerScreen(
             color = TextSecondary
         )
 
-        if (existingApp != null) {
+        if (uiState.isCheckingStatus) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(22.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        strokeWidth = 2.dp,
+                        color = GreenPrimary
+                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text("Checking your application", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Loading the latest status for your account.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+                    }
+                }
+            }
+        } else if (existingApp != null) {
             Card(
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
