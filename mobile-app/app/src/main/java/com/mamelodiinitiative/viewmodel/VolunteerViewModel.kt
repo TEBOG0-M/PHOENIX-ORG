@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuth.AuthStateListener
+import com.google.firebase.firestore.ListenerRegistration
 import com.mamelodiinitiative.data.VolunteerRepository
 import com.mamelodiinitiative.data.models.VolunteerApplication
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,7 +30,7 @@ class VolunteerViewModel(
     val uiState: StateFlow<VolunteerUiState> = _uiState.asStateFlow()
 
     private var activeUid: String? = null
-    private var applicationLoadJob: Job? = null
+    private var applicationListener: ListenerRegistration? = null
 
     private val authStateListener = AuthStateListener { firebaseAuth ->
         handleUserChanged(firebaseAuth.currentUser?.uid)
@@ -44,7 +44,8 @@ class VolunteerViewModel(
         if (uid == activeUid) return
 
         activeUid = uid
-        applicationLoadJob?.cancel()
+        applicationListener?.remove()
+        applicationListener = null
 
         // Never retain another account's application or unfinished form data.
         _uiState.value = VolunteerUiState(
@@ -73,21 +74,21 @@ class VolunteerViewModel(
     }
 
     private fun loadUserApplication(uid: String) {
-        applicationLoadJob?.cancel()
+        applicationListener?.remove()
         _uiState.value = _uiState.value.copy(
             existingApplication = null,
             isCheckingStatus = true,
             userUid = uid
         )
 
-        applicationLoadJob = viewModelScope.launch {
-            val result = repository.getLatestUserApplication(uid)
-            // A slow response from a previous account must never overwrite the new session.
-            if (activeUid != uid || auth.currentUser?.uid != uid) return@launch
+        applicationListener = repository.listenToLatestUserApplication(uid) { result ->
+            // Ignore snapshots from a previous account after sign-out or account switching.
+            if (activeUid != uid || auth.currentUser?.uid != uid) return@listenToLatestUserApplication
 
             _uiState.value = _uiState.value.copy(
                 existingApplication = result.getOrNull()?.takeIf { it.uid == uid },
-                isCheckingStatus = false
+                isCheckingStatus = false,
+                error = result.exceptionOrNull()?.localizedMessage
             )
         }
     }
@@ -148,7 +149,6 @@ class VolunteerViewModel(
 
     override fun onCleared() {
         auth.removeAuthStateListener(authStateListener)
-        applicationLoadJob?.cancel()
         super.onCleared()
     }
 }
