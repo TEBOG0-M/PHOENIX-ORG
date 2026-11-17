@@ -11,6 +11,14 @@ class VolunteerRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) {
+    private fun Any?.toStoredDateString(): String = when (this) {
+        is String -> this
+        is com.google.firebase.Timestamp -> toDate().toInstant().toString()
+        is java.util.Date -> toInstant().toString()
+        is Number -> java.time.Instant.ofEpochMilli(toLong()).toString()
+        else -> ""
+    }
+
     private fun mapApplication(document: com.google.firebase.firestore.DocumentSnapshot): VolunteerApplication {
         val data = document.data.orEmpty()
         val skills = when (val value = data["skills"]) {
@@ -36,8 +44,7 @@ class VolunteerRepository(
             date = data["date"] as? String ?: "",
             note = data["note"] as? String ?: "",
             status = status,
-            createdAt = data["createdAt"] as? String
-                ?: (data["createdAt"] as? com.google.firebase.Timestamp)?.toDate()?.toInstant()?.toString().orEmpty(),
+            createdAt = data["createdAt"].toStoredDateString(),
             decidedAt = data["decidedAt"] as? String
         )
     }
@@ -111,17 +118,16 @@ class VolunteerRepository(
                     else -> emptyList()
                 }
                 VolunteerProfile(
-                    uid = document.getString("uid")?.ifBlank { document.id } ?: document.id,
-                    name = document.getString("name") ?: document.getString("fullName").orEmpty(),
-                    email = document.getString("email").orEmpty(),
-                    phone = document.getString("phone").orEmpty(),
-                    address = document.getString("address").orEmpty(),
-                    bio = document.getString("bio").orEmpty(),
-                    callSign = document.getString("callSign").orEmpty(),
+                    uid = data["uid"] as? String ?: document.id,
+                    name = data["name"] as? String ?: data["fullName"] as? String ?: "",
+                    email = data["email"] as? String ?: "",
+                    phone = data["phone"] as? String ?: "",
+                    address = data["address"] as? String ?: "",
+                    bio = data["bio"] as? String ?: "",
+                    callSign = data["callSign"] as? String ?: "",
                     skills = skills,
                     availability = availability,
-                    createdAt = document.getString("createdAt")
-                        ?: (data["createdAt"] as? com.google.firebase.Timestamp)?.toDate()?.toInstant()?.toString().orEmpty()
+                    createdAt = data["createdAt"].toStoredDateString()
                 )
             }
             .sortedBy { it.name.lowercase() }
