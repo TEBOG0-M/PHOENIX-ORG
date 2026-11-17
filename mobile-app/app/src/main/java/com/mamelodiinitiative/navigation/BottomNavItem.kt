@@ -41,8 +41,6 @@ fun getNavItemsForRole(role: String?): List<BottomNavItem> {
         // Keep the manager bar to five destinations; volunteering remains available from More.
         items.removeAll { it.route == Routes.VOLUNTEER }
         items.add(BottomNavItem(Routes.MANAGER_DASHBOARD, "Manage", Icons.Default.AdminPanelSettings, Icons.Outlined.AdminPanelSettings))
-    } else {
-        items.add(2, BottomNavItem(Routes.VOLUNTEER, "Join", Icons.Default.People, Icons.Outlined.People))
     }
     items.add(BottomNavItem(Routes.MORE, "More", Icons.Default.MoreHoriz, Icons.Outlined.MoreHoriz))
     return items
