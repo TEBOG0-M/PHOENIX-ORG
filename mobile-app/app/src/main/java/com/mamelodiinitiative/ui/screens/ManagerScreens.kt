@@ -329,7 +329,16 @@ fun ManagerApplicationsScreen(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        MamelodiBackButton(onClick = onBack)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            MamelodiBackButton(onClick = onBack)
+            IconButton(onClick = { managerViewModel.loadManagerData() }) {
+                Icon(Icons.Default.Refresh, contentDescription = "Refresh applications", tint = GreenPrimary)
+            }
+        }
 
         Text(
             text = "VOLUNTEER APPLICATIONS",
@@ -371,8 +380,28 @@ fun ManagerApplicationsScreen(
             )
         }
 
-        if (filteredApps.isEmpty()) {
-            Card(
+        when {
+            appsState.isLoading -> Box(
+                modifier = Modifier.fillMaxWidth().padding(36.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = GreenPrimary)
+            }
+
+            appsState.error != null -> Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+            ) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Applications could not be loaded.", fontWeight = FontWeight.Bold)
+                    Text(appsState.error.orEmpty(), color = MaterialTheme.colorScheme.onErrorContainer)
+                    TextButton(onClick = { managerViewModel.loadManagerData() }) {
+                        Text("Try again")
+                    }
+                }
+            }
+
+            filteredApps.isEmpty() -> Card(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -384,8 +413,8 @@ fun ManagerApplicationsScreen(
                     color = TextSecondary
                 )
             }
-        } else {
-            filteredApps.forEach { app ->
+
+            else -> filteredApps.forEach { app ->
                 ApplicationSummaryCard(
                     application = app,
                     onApprove = {
