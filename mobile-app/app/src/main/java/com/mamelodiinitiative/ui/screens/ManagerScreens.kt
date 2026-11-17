@@ -98,6 +98,7 @@ fun ManagerDashboardScreen(
     onNavigate: (String) -> Unit,
     managerViewModel: ManagerViewModel = viewModel()
 ) {
+    LaunchedEffect(managerViewModel) { managerViewModel.startObservingApplications() }
     val appsState by managerViewModel.applicationsState.collectAsState()
     val programmesState by managerViewModel.programmesState.collectAsState()
     val volunteersState by managerViewModel.volunteersState.collectAsState()
@@ -310,6 +311,7 @@ fun ManagerApplicationsScreen(
     onBack: () -> Unit,
     managerViewModel: ManagerViewModel = viewModel()
 ) {
+    LaunchedEffect(managerViewModel) { managerViewModel.startObservingApplications() }
     val appsState by managerViewModel.applicationsState.collectAsState()
     val actionStatus by managerViewModel.actionStatus.collectAsState()
     var selectedFilter by remember { mutableStateOf("all") }
