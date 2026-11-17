@@ -36,6 +36,8 @@ class ManagerViewModel(
         loadManagerData()
     }
 
+    fun refreshApplications() = observeApplications()
+
     private fun observeApplications() {
         _applicationsState.value = _applicationsState.value.copy(isLoading = true, error = null)
         applicationsListener?.remove()
@@ -48,7 +50,11 @@ class ManagerViewModel(
                     _applicationsState.value = MainUiState(
                         data = _applicationsState.value.data,
                         isLoading = false,
-                        error = error.localizedMessage ?: "Unable to listen for application updates."
+                        error = if (error is com.google.firebase.firestore.FirebaseFirestoreException && error.code == com.google.firebase.firestore.FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+                            "Permission denied while reading applications. Confirm the deployed Firestore rules allow users with role \'manager\' or \'admin\' to list applications, and that this account has that role in users/{uid}."
+                        } else {
+                            error.localizedMessage ?: "Unable to listen for application updates."
+                        }
                     )
                 }
             )
