@@ -1,11 +1,14 @@
 package com.mamelodiinitiative.data
 
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.mamelodiinitiative.data.models.VolunteerApplication
 import com.mamelodiinitiative.data.models.VolunteerProfile
 import kotlinx.coroutines.tasks.await
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class VolunteerRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
@@ -26,6 +29,9 @@ class VolunteerRepository(
             is String -> value
             else -> ""
         }
+        val note = data["note"] as? String ?: ""
+        val availability = Regex("(?m)^Availability: (.*)$")
+            .find(note)?.groupValues?.getOrNull(1).orEmpty()
         val status = when ((data["status"] as? String)?.lowercase()) {
             "accepted" -> "approved"
             "declined" -> "rejected"
@@ -42,42 +48,114 @@ class VolunteerRepository(
             missionId = data["missionId"] as? String ?: "",
             missionTitle = data["missionTitle"] as? String ?: "",
             date = data["date"] as? String ?: "",
-            note = data["note"] as? String ?: "",
+            note = note,
+            availability = availability,
             status = status,
             createdAt = data["createdAt"].toStoredDateString(),
             decidedAt = data["decidedAt"] as? String
         )
     }
 
-    suspend fun submitApplication(application: VolunteerApplication): Result<Unit> = runCatching {
+    suspend fun submitApplication(application: VolunteerApplication): Result<String> = runCatching {
         val user = auth.currentUser ?: throw IllegalStateException("User must be authenticated to submit")
-        val docRef = firestore.collection("applications").document()
         val profile = firestore.collection("users").document(user.uid).get().await().data.orEmpty()
-        val skills = when (val value = profile["skills"]) {
-            is List<*> -> value.filterIsInstance<String>()
-            is String -> value.split(",").map(String::trim).filter(String::isNotEmpty)
-            else -> emptyList()
-        }
-        val name = (profile["name"] as? String)
-            ?: (profile["fullName"] as? String)
-            ?: user.displayName.orEmpty()
 
+        val name = application.fullName.trim().ifBlank {
+            (profile["name"] as? String)
+                ?: (profile["fullName"] as? String)
+                ?: user.displayName.orEmpty()
+        }
+        val email = application.email.trim().ifBlank {
+            (profile["email"] as? String) ?: user.email.orEmpty()
+        }
+        val phone = application.phone.trim().ifBlank {
+            profile["phone"] as? String ?: ""
+        }
+        require(name.isNotBlank()) { "Please provide your full name." }
+        require(email.isNotBlank()) { "Please provide your email address." }
+        require(phone.isNotBlank()) { "Please provide your phone number." }
+        require(application.availability.isNotBlank()) { "Please provide your availability." }
+
+        val existingApplications = firestore.collection("applications")
+            .whereEqualTo("uid", user.uid)
+            .get().await().documents
+        val hasActiveApplication = existingApplications.any { document ->
+            val data = document.data.orEmpty()
+            val sameMission = (data["missionId"] as? String).orEmpty() == application.missionId
+            val status = (data["status"] as? String)?.lowercase()
+            sameMission && status in listOf("pending", "accepted")
+        }
+        require(!hasActiveApplication) {
+            "You already have an active application for this programme."
+        }
+
+        val skills = application.skills
+            .split(",", ";", "\n")
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+            .distinct()
+        val note = buildString {
+            append("Availability: ")
+            append(application.availability.trim())
+            if (application.note.isNotBlank()) {
+                append("\n\n")
+                append(application.note.trim())
+            }
+        }
+        val now = java.time.Instant.now().toString()
+        val date = application.date.ifBlank {
+            SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        }
+        val docRef = firestore.collection("applications").document()
         val record = mapOf(
             "uid" to user.uid,
             "name" to name,
-            "email" to (profile["email"] as? String ?: user.email.orEmpty()),
-            "phone" to (profile["phone"] as? String ?: ""),
+            "email" to email,
+            "phone" to phone,
             "skills" to skills,
             "missionId" to application.missionId,
             "missionTitle" to application.missionTitle,
-            "date" to application.date,
-            "note" to application.note,
+            "date" to date,
+            "note" to note,
             "status" to "pending",
-            "createdAt" to java.time.Instant.now().toString(),
+            "createdAt" to now,
             "decidedAt" to null
         )
         docRef.set(record).await()
+        docRef.id
     }
+
+    fun listenToAllApplications(
+        onResult: (Result<List<VolunteerApplication>>) -> Unit
+    ): ListenerRegistration = firestore.collection("applications")
+        .addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                onResult(Result.failure(error))
+            } else {
+                onResult(runCatching {
+                    snapshot?.documents.orEmpty()
+                        .map(::mapApplication)
+                        .sortedByDescending { it.createdAt }
+                })
+            }
+        }
+
+    fun listenToLatestUserApplication(
+        uid: String,
+        onResult: (Result<VolunteerApplication?>) -> Unit
+    ): ListenerRegistration = firestore.collection("applications")
+        .whereEqualTo("uid", uid)
+        .addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                onResult(Result.failure(error))
+            } else {
+                onResult(runCatching {
+                    snapshot?.documents.orEmpty()
+                        .map(::mapApplication)
+                        .maxByOrNull { it.createdAt }
+                })
+            }
+        }
 
     suspend fun getUserApplications(uid: String): Result<List<VolunteerApplication>> = runCatching {
         firestore.collection("applications")

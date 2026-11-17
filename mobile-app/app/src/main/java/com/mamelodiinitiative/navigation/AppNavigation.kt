@@ -106,6 +106,7 @@ fun AppNavigation(
             composable(Routes.VOLUNTEER_FORM) {
                 VolunteerApplicationScreen(
                     application = volunteerUiState.application,
+                    programmes = programmesState.data,
                     onChange = volunteerViewModel::updateApplication,
                     onBack = { navController.popBackStack() },
                     onReview = {
@@ -142,7 +143,8 @@ fun AppNavigation(
             composable(Routes.NEWS) {
                 NewsScreen(
                     state = newsState,
-                    onNavigate = navController::navigate
+                    onNavigate = navController::navigate,
+                    onRetry = mainViewModel::loadNews
                 )
             }
 

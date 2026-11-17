@@ -98,6 +98,7 @@ fun ManagerDashboardScreen(
     onNavigate: (String) -> Unit,
     managerViewModel: ManagerViewModel = viewModel()
 ) {
+    LaunchedEffect(managerViewModel) { managerViewModel.startObservingApplications() }
     val appsState by managerViewModel.applicationsState.collectAsState()
     val programmesState by managerViewModel.programmesState.collectAsState()
     val volunteersState by managerViewModel.volunteersState.collectAsState()
@@ -310,7 +311,9 @@ fun ManagerApplicationsScreen(
     onBack: () -> Unit,
     managerViewModel: ManagerViewModel = viewModel()
 ) {
+    LaunchedEffect(managerViewModel) { managerViewModel.startObservingApplications() }
     val appsState by managerViewModel.applicationsState.collectAsState()
+    val actionStatus by managerViewModel.actionStatus.collectAsState()
     var selectedFilter by remember { mutableStateOf("all") }
     val haptic = LocalHapticFeedback.current
 
@@ -329,7 +332,16 @@ fun ManagerApplicationsScreen(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        MamelodiBackButton(onClick = onBack)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            MamelodiBackButton(onClick = onBack)
+            IconButton(onClick = { managerViewModel.refreshApplications() }) {
+                Icon(Icons.Default.Refresh, contentDescription = "Refresh applications", tint = GreenPrimary)
+            }
+        }
 
         Text(
             text = "VOLUNTEER APPLICATIONS",
@@ -343,6 +355,29 @@ fun ManagerApplicationsScreen(
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.ExtraBold
         )
+
+        if (actionStatus != null) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (actionStatus!!.startsWith("Failed")) MaterialTheme.colorScheme.errorContainer else GreenLight
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        actionStatus.orEmpty(),
+                        modifier = Modifier.weight(1f),
+                        color = if (actionStatus!!.startsWith("Failed")) MaterialTheme.colorScheme.onErrorContainer else GreenPrimary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    TextButton(onClick = { managerViewModel.clearActionStatus() }) { Text("Dismiss") }
+                }
+            }
+        }
 
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             SegmentedButton(
@@ -371,8 +406,28 @@ fun ManagerApplicationsScreen(
             )
         }
 
-        if (filteredApps.isEmpty()) {
-            Card(
+        when {
+            appsState.isLoading -> Box(
+                modifier = Modifier.fillMaxWidth().padding(36.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = GreenPrimary)
+            }
+
+            appsState.error != null -> Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+            ) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Applications could not be loaded.", fontWeight = FontWeight.Bold)
+                    Text(appsState.error.orEmpty(), color = MaterialTheme.colorScheme.onErrorContainer)
+                    TextButton(onClick = { managerViewModel.refreshApplications() }) {
+                        Text("Try again")
+                    }
+                }
+            }
+
+            filteredApps.isEmpty() -> Card(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -384,8 +439,8 @@ fun ManagerApplicationsScreen(
                     color = TextSecondary
                 )
             }
-        } else {
-            filteredApps.forEach { app ->
+
+            else -> filteredApps.forEach { app ->
                 ApplicationSummaryCard(
                     application = app,
                     onApprove = {
@@ -598,19 +653,29 @@ private fun ApplicationSummaryCard(
 
             Text("Email: ${application.email}", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
             Text("Phone: ${application.phone}", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+            if (application.missionTitle.isNotBlank()) {
+                Text("Programme: ${application.missionTitle}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+            }
+            if (application.date.isNotBlank()) {
+                Text("Submitted for: ${application.date}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            }
             if (application.skills.isNotBlank()) {
                 Text("Skills: ${application.skills}", style = MaterialTheme.typography.bodyMedium)
             }
             if (application.availability.isNotBlank()) {
                 Text("Availability: ${application.availability}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
             }
+            val additionalNote = application.note.substringAfter("\n\n", "").trim()
+            if (additionalNote.isNotBlank()) {
+                Text("Applicant note: $additionalNote", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (application.status != "approved") {
+            if (application.status == "pending") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Button(
                         onClick = onApprove,
                         colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
@@ -618,9 +683,7 @@ private fun ApplicationSummaryCard(
                     ) {
                         Text("Approve", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
-                }
-                Spacer(Modifier.width(8.dp))
-                if (application.status != "rejected") {
+                    Spacer(Modifier.width(8.dp))
                     OutlinedButton(
                         onClick = onReject,
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
@@ -629,6 +692,12 @@ private fun ApplicationSummaryCard(
                         Text("Reject", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                 }
+            } else {
+                Text(
+                    if (application.status == "approved") "This application has been approved." else "This application has been declined.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextSecondary
+                )
             }
         }
     }

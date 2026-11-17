@@ -2,6 +2,7 @@ package com.mamelodiinitiative.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.firestore.ListenerRegistration
 import com.mamelodiinitiative.data.ProgrammeRepository
 import com.mamelodiinitiative.data.VolunteerRepository
 import com.mamelodiinitiative.data.models.Programme
@@ -25,6 +26,8 @@ class ManagerViewModel(
     private val _volunteersState = MutableStateFlow(MainUiState<VolunteerProfile>(isLoading = true))
     val volunteersState: StateFlow<MainUiState<VolunteerProfile>> = _volunteersState.asStateFlow()
 
+    private var applicationsListener: ListenerRegistration? = null
+
     private val _actionStatus = MutableStateFlow<String?>(null)
     val actionStatus: StateFlow<String?> = _actionStatus.asStateFlow()
 
@@ -32,20 +35,34 @@ class ManagerViewModel(
         loadManagerData()
     }
 
-    fun loadManagerData() {
-        viewModelScope.launch {
-            _applicationsState.value = _applicationsState.value.copy(isLoading = true)
-            val result = volunteerRepository.getAllApplications()
+    fun startObservingApplications() = observeApplications()
+
+    fun refreshApplications() = observeApplications()
+
+    private fun observeApplications() {
+        _applicationsState.value = _applicationsState.value.copy(isLoading = true, error = null)
+        applicationsListener?.remove()
+        applicationsListener = volunteerRepository.listenToAllApplications { result ->
             result.fold(
                 onSuccess = { list ->
                     _applicationsState.value = MainUiState(data = list, isLoading = false, error = null)
                 },
-                onFailure = { err ->
-                    _applicationsState.value = MainUiState(data = emptyList(), isLoading = false, error = err.localizedMessage)
+                onFailure = { error ->
+                    _applicationsState.value = MainUiState(
+                        data = _applicationsState.value.data,
+                        isLoading = false,
+                        error = if (error is com.google.firebase.firestore.FirebaseFirestoreException && error.code == com.google.firebase.firestore.FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+                            "Permission denied while reading applications. Confirm the deployed Firestore rules allow users with role \'manager\' or \'admin\' to list applications, and that this account has that role in users/{uid}."
+                        } else {
+                            error.localizedMessage ?: "Unable to listen for application updates."
+                        }
+                    )
                 }
             )
         }
+    }
 
+    fun loadManagerData() {
         viewModelScope.launch {
             _programmesState.value = programmeRepository.getProgrammes()
         }
@@ -78,10 +95,9 @@ class ManagerViewModel(
             result.fold(
                 onSuccess = {
                     _actionStatus.value = "Application status updated to $newStatus."
-                    loadManagerData()
                 },
                 onFailure = { err ->
-                    _actionStatus.value = "Failed to update status: ${err.localizedMessage}"
+                    _actionStatus.value = "Failed to update status: ${err.localizedMessage ?: "Permission denied or network error."}"
                 }
             )
         }
@@ -119,6 +135,12 @@ class ManagerViewModel(
                 }
             )
         }
+    }
+
+    override fun onCleared() {
+        applicationsListener?.remove()
+        applicationsListener = null
+        super.onCleared()
     }
 
     fun clearActionStatus() {
