@@ -644,12 +644,12 @@ private fun ApplicationSummaryCard(
                 Text("Applicant note: $additionalNote", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (application.status != "approved") {
+            if (application.status == "pending") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Button(
                         onClick = onApprove,
                         colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
@@ -657,9 +657,7 @@ private fun ApplicationSummaryCard(
                     ) {
                         Text("Approve", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
-                }
-                Spacer(Modifier.width(8.dp))
-                if (application.status != "rejected") {
+                    Spacer(Modifier.width(8.dp))
                     OutlinedButton(
                         onClick = onReject,
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
@@ -668,6 +666,12 @@ private fun ApplicationSummaryCard(
                         Text("Reject", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                 }
+            } else {
+                Text(
+                    if (application.status == "approved") "This application has been approved." else "This application has been declined.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextSecondary
+                )
             }
         }
     }
