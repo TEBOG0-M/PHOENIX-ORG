@@ -108,10 +108,6 @@ fun ManagerDashboardScreen(
     val registeredVolunteerCount = volunteersState.data.size
     val programmesCount = programmesState.data.size
 
-    LaunchedEffect(Unit) {
-        managerViewModel.loadManagerData()
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -197,7 +193,7 @@ fun ManagerDashboardScreen(
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             MetricCard(
                 title = "Pending Review",
-                count = pendingCount.toString(),
+                count = if (appsState.isLoading) "—" else pendingCount.toString(),
                 icon = Icons.Default.Pending,
                 color = Color(0xFFE65100),
                 modifier = Modifier.weight(1f),
@@ -205,7 +201,7 @@ fun ManagerDashboardScreen(
             )
             MetricCard(
                 title = "Registered Volunteers",
-                count = registeredVolunteerCount.toString(),
+                count = if (volunteersState.isLoading) "—" else registeredVolunteerCount.toString(),
                 icon = Icons.Default.CheckCircle,
                 color = GreenPrimary,
                 modifier = Modifier.weight(1f),
@@ -216,7 +212,7 @@ fun ManagerDashboardScreen(
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             MetricCard(
                 title = "Programmes",
-                count = programmesCount.toString(),
+                count = if (programmesState.isLoading) "—" else programmesCount.toString(),
                 icon = Icons.Default.School,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f),
@@ -224,7 +220,7 @@ fun ManagerDashboardScreen(
             )
             MetricCard(
                 title = "Total Applications",
-                count = appsState.data.size.toString(),
+                count = if (appsState.isLoading) "—" else appsState.data.size.toString(),
                 icon = Icons.AutoMirrored.Filled.ListAlt,
                 color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.weight(1f),
@@ -676,10 +672,6 @@ fun ManagerVolunteersScreen(
                 .any { it.lowercase().contains(query) } ||
                 volunteer.skills.any { it.lowercase().contains(query) }
         }
-    }
-
-    LaunchedEffect(Unit) {
-        managerViewModel.loadVolunteers()
     }
 
     Column(
