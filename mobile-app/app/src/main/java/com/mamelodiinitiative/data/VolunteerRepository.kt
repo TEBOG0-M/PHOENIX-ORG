@@ -2,6 +2,7 @@ package com.mamelodiinitiative.data
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.mamelodiinitiative.data.models.VolunteerApplication
 import com.mamelodiinitiative.data.models.VolunteerProfile
 import kotlinx.coroutines.tasks.await
@@ -123,6 +124,38 @@ class VolunteerRepository(
         docRef.set(record).await()
         docRef.id
     }
+
+    fun listenToAllApplications(
+        onResult: (Result<List<VolunteerApplication>>) -> Unit
+    ): ListenerRegistration = firestore.collection("applications")
+        .addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                onResult(Result.failure(error))
+            } else {
+                onResult(runCatching {
+                    snapshot?.documents.orEmpty()
+                        .map(::mapApplication)
+                        .sortedByDescending { it.createdAt }
+                })
+            }
+        }
+
+    fun listenToLatestUserApplication(
+        uid: String,
+        onResult: (Result<VolunteerApplication?>) -> Unit
+    ): ListenerRegistration = firestore.collection("applications")
+        .whereEqualTo("uid", uid)
+        .addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                onResult(Result.failure(error))
+            } else {
+                onResult(runCatching {
+                    snapshot?.documents.orEmpty()
+                        .map(::mapApplication)
+                        .maxByOrNull { it.createdAt }
+                })
+            }
+        }
 
     suspend fun getUserApplications(uid: String): Result<List<VolunteerApplication>> = runCatching {
         firestore.collection("applications")
