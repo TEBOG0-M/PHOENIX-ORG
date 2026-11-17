@@ -106,6 +106,7 @@ fun AppNavigation(
             composable(Routes.VOLUNTEER_FORM) {
                 VolunteerApplicationScreen(
                     application = volunteerUiState.application,
+                    programmes = programmesState.data,
                     onChange = volunteerViewModel::updateApplication,
                     onBack = { navController.popBackStack() },
                     onReview = {
