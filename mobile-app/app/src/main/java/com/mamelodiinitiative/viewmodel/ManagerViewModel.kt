@@ -32,9 +32,10 @@ class ManagerViewModel(
     val actionStatus: StateFlow<String?> = _actionStatus.asStateFlow()
 
     init {
-        observeApplications()
         loadManagerData()
     }
+
+    fun startObservingApplications() = observeApplications()
 
     fun refreshApplications() = observeApplications()
 
