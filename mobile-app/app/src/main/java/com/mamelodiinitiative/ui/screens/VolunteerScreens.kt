@@ -28,6 +28,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mamelodiinitiative.data.models.Programme
 import com.mamelodiinitiative.data.models.VolunteerApplication
 import com.mamelodiinitiative.navigation.Routes
 import com.mamelodiinitiative.ui.components.MamelodiBackButton
@@ -190,7 +191,13 @@ fun VolunteerScreen(
 }
 
 @Composable
-fun VolunteerApplicationScreen(application: VolunteerApplication, onChange: (VolunteerApplication) -> Unit, onBack: () -> Unit, onReview: () -> Unit) {
+fun VolunteerApplicationScreen(
+    application: VolunteerApplication,
+    programmes: List<Programme> = emptyList(),
+    onChange: (VolunteerApplication) -> Unit,
+    onBack: () -> Unit,
+    onReview: () -> Unit
+) {
     val haptic = LocalHapticFeedback.current
     val validEmail = Patterns.EMAIL_ADDRESS.matcher(application.email.trim()).matches()
     val validPhone = application.phone.filter { it.isDigit() }.length >= 7
@@ -241,10 +248,64 @@ fun VolunteerApplicationScreen(application: VolunteerApplication, onChange: (Vol
                 placeholder = "e.g. tutoring, sport, events, admin",
                 minLines = 2
             )
+            var programmeMenuExpanded by remember { mutableStateOf(false) }
+            val selectedProgramme = programmes.firstOrNull { it.docId == application.missionId }
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("Programme of interest (optional)", style = MaterialTheme.typography.labelLarge)
+                Box {
+                    OutlinedButton(
+                        onClick = { programmeMenuExpanded = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Text(
+                            selectedProgramme?.title ?: "General volunteer application",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = programmeMenuExpanded,
+                        onDismissRequest = { programmeMenuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("General volunteer application") },
+                            onClick = {
+                                onChange(application.copy(
+                                    missionId = "",
+                                    missionTitle = "",
+                                    programmePreference = ""
+                                ))
+                                programmeMenuExpanded = false
+                            }
+                        )
+                        programmes.filter { it.docId.isNotBlank() }.forEach { programme ->
+                            DropdownMenuItem(
+                                text = { Text(programme.title) },
+                                onClick = {
+                                    onChange(application.copy(
+                                        missionId = programme.docId,
+                                        missionTitle = programme.title,
+                                        programmePreference = programme.title
+                                    ))
+                                    programmeMenuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                if (programmes.isEmpty()) {
+                    Text(
+                        "No published programmes are currently available. You can still submit a general application.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary
+                    )
+                }
+            }
             FriendlyTextField(
-                value = application.programmePreference,
-                onValueChange = { onChange(application.copy(programmePreference = it)) },
-                label = "Programme of interest (optional)"
+                value = application.note,
+                onValueChange = { onChange(application.copy(note = it)) },
+                label = "Additional note (optional)",
+                minLines = 2
             )
             FriendlyTextField(
                 value = application.availability,
