@@ -149,6 +149,8 @@ class VolunteerViewModel(
 
     override fun onCleared() {
         auth.removeAuthStateListener(authStateListener)
+        applicationListener?.remove()
+        applicationListener = null
         super.onCleared()
     }
 }
