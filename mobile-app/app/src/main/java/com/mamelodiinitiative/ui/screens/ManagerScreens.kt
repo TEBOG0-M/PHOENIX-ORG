@@ -598,11 +598,21 @@ private fun ApplicationSummaryCard(
 
             Text("Email: ${application.email}", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
             Text("Phone: ${application.phone}", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+            if (application.missionTitle.isNotBlank()) {
+                Text("Programme: ${application.missionTitle}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+            }
+            if (application.date.isNotBlank()) {
+                Text("Submitted for: ${application.date}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            }
             if (application.skills.isNotBlank()) {
                 Text("Skills: ${application.skills}", style = MaterialTheme.typography.bodyMedium)
             }
             if (application.availability.isNotBlank()) {
                 Text("Availability: ${application.availability}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            }
+            val additionalNote = application.note.substringAfter("\n\n", "").trim()
+            if (additionalNote.isNotBlank()) {
+                Text("Applicant note: $additionalNote", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
             }
 
             Row(
