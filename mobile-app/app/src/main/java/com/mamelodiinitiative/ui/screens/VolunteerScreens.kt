@@ -132,6 +132,12 @@ fun VolunteerScreen(
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("Applicant: ${existingApp.fullName}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                         Text("Email: ${existingApp.email}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                        if (existingApp.missionTitle.isNotBlank()) {
+                            Text("Programme: ${existingApp.missionTitle}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                        }
+                        if (existingApp.date.isNotBlank()) {
+                            Text("Submitted: ${existingApp.date}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                        }
                         if (existingApp.availability.isNotBlank()) {
                             Text("Availability: ${existingApp.availability}", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                         }
