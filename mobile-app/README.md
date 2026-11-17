@@ -1,90 +1,65 @@
-# PHOENIX ORG — Android Application
+# PHOENIX ORG — Android
 
-The PHOENIX ORG Android application provides mobile access to organisational information, missions/programmes, news, volunteer applications and contact enquiries.
-
-Built with Kotlin and Jetpack Compose, the application uses Firebase Authentication and Cloud Firestore for its Android identity and data layer.
-
-## Features
-
-- Email/password registration and sign-in using Firebase Authentication.
-- Authenticated session and Firestore profile handling.
-- Public organisational information and mission/programme listings.
-- Programme detail and manager programme-management flows.
-- News listing and article details.
-- Volunteer application submission and status retrieval.
-- Manager application review, subject to the user's Firestore role.
-- Contact enquiry submission.
-- Role-aware navigation and account settings.
-- Loading, empty and error states where implemented.
-
-Donation screens provide information only unless a real payment integration is separately configured. The app must not represent an intention or form submission as a completed payment.
+The Android application provides mobile access to PHOENIX ORG information, missions/programmes, news, volunteer applications and contact enquiries.
 
 ## Technology
 
-| Technology | Purpose |
+| Technology | Responsibility |
 |---|---|
 | Kotlin | Application language |
-| Jetpack Compose | UI framework |
+| Jetpack Compose | UI |
 | Material 3 | UI components |
-| Navigation Compose | App navigation |
-| Firebase Authentication | User authentication |
-| Cloud Firestore | Application data |
-| Kotlin Coroutines / Flow | Asynchronous work and state |
-| AndroidX Lifecycle | Lifecycle-aware state |
-| DataStore Preferences | Local preferences, where used |
+| Navigation Compose | Screen navigation |
+| Firebase Authentication | Email/password authentication |
+| Cloud Firestore | Profile and application data |
+| Coroutines and Flow | Asynchronous operations and observable state |
+| AndroidX Lifecycle | ViewModel and lifecycle integration |
+| DataStore Preferences | Local preferences |
 
-The namespace and application ID remain `com.mamelodiinitiative` for compatibility with the configured Firebase Android application.
+The Android namespace and application ID are `com.mamelodiinitiative`. Do not change them without updating the registered Firebase Android app and its configuration.
 
-## Firestore contract
+## Implemented application areas
 
-The Android data layer uses these shared collection names:
+- Account registration and sign-in.
+- Authenticated user profile loading.
+- Public home, information, mission/programme and news screens.
+- Volunteer application submission and application-status retrieval.
+- Manager dashboard and application review.
+- Manager mission/programme creation, editing and deletion.
+- Contact enquiry submission.
+- Role-aware navigation and account settings.
 
-| Collection | Purpose |
-|---|---|
-| `users/{uid}` | User profile; document ID is the Firebase Authentication UID |
-| `missions/{missionId}` | Public mission/programme content |
-| `applications/{applicationId}` | Volunteer applications; owner field is `uid` |
-| `news_articles/{articleId}` | Public news content |
-| `mail/{messageId}` | Contact enquiry submission |
-| `donations`, `pledges`, `notifications` | Shared platform collections; use only where a corresponding Android feature is implemented |
+The manager interface is not a complete organisation-management console. A visible menu item does not guarantee that a corresponding database-management feature exists. In particular, a registered-volunteer directory and full user-profile administration are not currently implemented.
 
-The role values used by the shared platform include `member`, `volunteer`, `donor` and the privileged `manager` role. Public registration must never grant manager access. Manager privileges must be assigned through an authorized administrative process.
-
-The Firestore rules source is `firestore.rules`. It must be deployed to the same Firebase project used by the Android app. A successful source-code build does not confirm that rules are deployed or that runtime access is authorized.
-
-**Integration note:** The website's supplied rules currently differ on who may create `mail` documents. Android contact submission requires a narrowly validated public create permission. Reconcile this rule with the website developer before deploying shared rules.
+Donation screens are informational unless a separate payment integration is configured. Do not describe a form submission or pledge as a completed payment.
 
 ## Requirements
 
 - Android Studio
 - JDK 17
-- Android SDK matching the Gradle configuration
+- Android SDK compatible with the Gradle configuration
 - Access to the PHOENIX ORG Firebase project
-- Android emulator or physical Android device
 
-## Setup
+## Configure and run
 
 1. Clone the repository:
-
    ```bash
    git clone https://github.com/TEBOG0-M/PHOENIX-ORG.git
    ```
-
-2. Open the `mobile-app` directory in Android Studio.
-3. Add the Firebase Android configuration file:
-
+2. Open the `mobile-app/` directory in Android Studio.
+3. Configure the Firebase Android application file at:
+   ```text
+   app/google-services.json
    ```
-   mobile-app/app/google-services.json
-   ```
+4. Confirm that the Firebase configuration matches application ID `com.mamelodiinitiative`.
+5. Enable Email/Password authentication in Firebase Authentication.
+6. Sync Gradle and run the application.
 
-4. Sync Gradle.
-5. Run the application on a configured emulator or device.
-
-Never place manager passwords, service-account credentials or private keys in source code, configuration committed to Git, or application defaults.
+Never add Firebase Admin service-account credentials, private keys, passwords or signing secrets to the Android project.
 
 ## Build and test
 
-Run from the `mobile-app` directory.
+Run from this directory.
 
 **Windows**
 ```powershell
@@ -92,17 +67,36 @@ Run from the `mobile-app` directory.
 .\gradlew.bat testDebugUnitTest
 ```
 
-**macOS / Linux**
+**macOS/Linux**
 ```bash
 ./gradlew assembleDebug
 ./gradlew testDebugUnitTest
 ```
 
-GitHub Actions runs the debug build and JVM unit tests through `.github/workflows/android-ci.yml`. Successful runs upload a debug APK artifact. Check the repository's **Actions** tab for the actual run result.
+The debug APK is generated at:
+```text
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+GitHub Actions is configured in the repository at `.github/workflows/android-ci.yml`. Azure Pipelines is configured at `azure-pipelines.yml` within this directory. Check the relevant pipeline run for its actual result.
+
+## Firestore contract
+
+| Collection | Purpose |
+|---|---|
+| `users/{uid}` | User profile; document ID matches Firebase Authentication UID |
+| `missions/{missionId}` | Mission/programme content |
+| `applications/{applicationId}` | Volunteer applications; ownership field is `uid` |
+| `news_articles/{articleId}` | News content |
+| `mail/{messageId}` | Contact enquiries |
+
+The shared platform uses role values such as `member`, `volunteer`, `donor` and the privileged `manager` role. Public registration must never grant manager privileges.
+
+The rules source is [`firestore.rules`](firestore.rules). It is a source file only; it must be reviewed and deployed to the correct Firebase project. Rules for the website and Android client must be reconciled before publishing shared changes.
 
 ## Project structure
 
-```
+```text
 mobile-app/
 ├── app/
 │   └── src/main/
@@ -113,23 +107,24 @@ mobile-app/
 │       │   ├── ui/
 │       │   └── viewmodel/
 │       └── AndroidManifest.xml
+├── docs/
 ├── firestore.rules
+├── azure-pipelines.yml
 ├── build.gradle.kts
+├── settings.gradle.kts
 └── README.md
 ```
 
-## Security
+## Security and verification
 
 - Firestore rules are the authoritative data-access boundary.
-- User profile document IDs must match Firebase Authentication UIDs.
-- Volunteers may access only their own private records.
-- Manager operations must be authorized by Firestore rules.
-- Never trust a client-side role check as the only access control.
-- Validate data before writing it to Firestore.
-- Keep passwords and privileged credentials out of the repository.
-- Confirm the active Firebase project and deployed rules when investigating permission errors.
+- A client-side role check is not sufficient authorization.
+- User-owned records must be scoped to the authenticated UID.
+- Do not silently replace failed database reads with sample data in production-facing flows.
+- Verify manager operations against the deployed rules and real Firebase records.
+- A successful build does not prove authentication, database permissions or every screen works at runtime.
 
 ## Related resources
 
-- [PHOENIX ORG repository](https://github.com/TEBOG0-M/PHOENIX-ORG)
-- [GitHub Actions](https://github.com/TEBOG0-M/PHOENIX-ORG/actions)
+- [Repository](https://github.com/TEBOG0-M/PHOENIX-ORG)
+- [Android CI](https://github.com/TEBOG0-M/PHOENIX-ORG/actions)

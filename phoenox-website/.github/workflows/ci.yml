@@ -1,7 +1,8 @@
 name: CI / Deploy
 
 on:
-  push: { branches: [main] }
+  push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -14,28 +15,56 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 20 }
-      - name: Syntax-check every JS module
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+
+      - name: Syntax-check website JavaScript modules
+        working-directory: phoenox-website
         run: |
           set -e
-          for f in phoenox/assets/js/*.js; do node --check --input-type=module < "$f" && echo "ok $f"; done
-      - name: Check required files exist
+          for file in phoenox/assets/js/*.js; do
+            node --check --input-type=module < "$file"
+            echo "OK: $file"
+          done
+
+      - name: Check required website files
         run: |
-          for f in phoenox/index.html phoenox/pages/donate.html firestore.rules README.md; do test -f "$f" || { echo "missing $f"; exit 1; }; done
+          set -e
+          test -f phoenox-website/README.md
+          test -f phoenox-website/phoenox/index.html
+          test -f phoenox-website/phoenox/pages/donate.html
+
       - name: Block accidental real-payment keys
-        run: "! grep -rEi 'sk_live|stripe_secret|payfast_merchant_key' phoenox || { echo 'secret found'; exit 1; }"
+        run: |
+          if grep -rEi 'sk_live|stripe_secret|payfast_merchant_key' phoenox-website/phoenox; then
+            echo "Potential real-payment credential found."
+            exit 1
+          fi
 
   deploy:
     needs: validate
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: { name: github-pages, url: "${{ steps.deploy.outputs.page_url }}" }
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with: { path: phoenox }
-      - id: deploy
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload website
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: phoenox-website/phoenox
+
+      - name: Deploy website
+        id: deploy
         uses: actions/deploy-pages@v4

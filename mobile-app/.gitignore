@@ -1,31 +1,20 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.idea/codeStyles
-.idea/shelf
-.idea/inspectionProfiles
-.idea/vcs.xml
-.idea/gradle.xml
-.idea/misc.xml
-.idea/deploymentTargetDropDown.xml
-/build
-/captures
-.externalNativeBuild
-.cxx
-/google-services.json
-.DS_Store
-*.swp
-*~
+# Local Gradle and Android build output
 .gradle/
 .kotlin/
 **/build/
+local.properties
 captures/
 .externalNativeBuild/
 .cxx/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# Firebase client configuration (provide locally when required)
+google-services.json
+
+# Local and operating-system files
 .DS_Store
+*.swp
+*~
