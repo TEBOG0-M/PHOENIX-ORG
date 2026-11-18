@@ -26,6 +26,8 @@ jobs:
   build:
     name: Build and test Android app
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: mobile-app
@@ -48,6 +50,24 @@ jobs:
 
       - name: Build debug APK and run unit tests
         run: ./gradlew --no-daemon assembleDebug testDebugUnitTest
+
+      - name: Publish latest debug APK to main
+        if: success() && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        working-directory: .
+        run: |
+          mkdir -p mobile-app/releases
+          cp mobile-app/app/build/outputs/apk/debug/app-debug.apk mobile-app/releases/phoenix-latest.apk
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mobile-app/releases/phoenix-latest.apk
+
+          if git diff --cached --quiet; then
+            echo "The published APK is already up to date."
+          else
+            git commit -m "chore(android): publish latest debug APK"
+            git push origin HEAD:main
+          fi
 
       - name: Upload debug APK
         if: success()
